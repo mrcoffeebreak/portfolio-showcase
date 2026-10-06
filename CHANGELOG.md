@@ -6,6 +6,16 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Added
 
+- **tooling:** `scripts/quick-start.sh` — the one-command bootstrap from a fresh
+  clone to a running dashboard: create a root `.venv` if absent, install
+  `requirements.txt`, seed `market_data.db` from `sample_data.json` **only when it
+  is missing**, then `exec uvicorn --app-dir pricing-dashboard app:app` on **8090**.
+  It takes no arguments and is safe to re-run.
+- **docs:** `LOCAL_SETUP.md` — prerequisites, the quick start, the equivalent
+  by-hand commands, the port table, running the tests, running the notebook, the
+  environment variables and troubleshooting. `TECH_STACK.md` — every runtime and
+  development tool with its rationale, plus what is deliberately absent (an ORM, a
+  bundler, a database server, Docker, a dashboard charting library, live scraping).
 - **notebook:** `notebooks/pricing_walkthrough.ipynb` — the analysis half of the
   pipeline and this repo's first notebook. It finds the repository root by walking
   up from the kernel's working directory (a notebook has no `__file__`), then
@@ -112,6 +122,18 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Changed
 
+- **docs:** `README.md` finished — the landing page now carries the illustrative-
+  data disclaimer, the quick start, the architecture diagram, a component summary,
+  a layout table and the docs index.
+- **docs:** `01_PRICING_SCRAPER_CASE_STUDY.md` **finalized against the shipped
+  code**, replacing the Phase A draft banner with a verified-against-code note.
+  Claims corrected: vendor count 3 → 4; the notebook's framing changed from "what
+  is the trend" to positioning/spread/coverage (it plots one snapshot, not a time
+  series); SQLite "a few hundred rows" → "a few dozen"; HTMX "~48 KB" → "~50 KB";
+  the FastAPI rationale no longer leans on a cross-repository claim a public reader
+  cannot verify; the upsert key is now stated as
+  `(competitor, product, valid_from)`; and the §6 trend sentence now says the schema
+  *supports* a series while the notebook plots a single snapshot.
 - **ci:** the notebook is now part of the single shared gate. Phase D appended
   `jupyter nbconvert --to notebook --execute --stdout
   notebooks/pricing_walkthrough.ipynb > /dev/null` to `probe_config.yaml` →
@@ -195,4 +217,6 @@ local, unpublished `.git/info/exclude` rather than the published `.gitignore`.
 
 ### Known gaps
 
-- No `origin` remote yet; publishing is Phase E.
+- No `origin` remote yet — publishing (create the public repository, push `main`,
+  confirm CI is green, tag `v1.0.0`) is the last remaining step and is held for an
+  explicit go-ahead.

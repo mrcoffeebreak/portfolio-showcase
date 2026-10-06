@@ -8,13 +8,21 @@ and `CHANGELOG.md` (dated change entries).
 
 ## Current snapshot
 
-- **Last reconciled:** 2026-10-06 (`main`). **Phases A + B + C + D complete**,
-  committed; no `origin` remote yet, so CI is drafted but not yet exercised.
-- **Status:** Data layer, dashboard **and** analysis notebook complete. Schema, seed
-  JSON, idempotent scraper (with a proper open/closed price window), the FastAPI +
-  HTMX dashboard on port 8090 (shell/fragment split, JSON API), the Jupyter
-  walkthrough and a green **36-test** suite are in place, and the shared gate also
-  executes the notebook. Only `scripts/quick-start.sh` and the Phase E docs remain.
+- **Last reconciled:** 2026-10-06 (`main`). **Phases A–D complete, plus Phase E's
+  local work (E1–E5)** and committed. There is still no `origin` remote, so CI is
+  drafted but not yet exercised: **E6 (create the public repo, push `main`, confirm
+  CI green, tag `v1.0.0`) is the only step left.**
+- **Status:** The repo is now a complete, self-contained artifact. Data layer,
+  dashboard, notebook, a one-command bootstrap (`scripts/quick-start.sh`) and the
+  full doc set (README, `LOCAL_SETUP.md`, `TECH_STACK.md`, the finalized case study)
+  are all in place, behind a green **36-test** suite plus the headless notebook gate.
+- **Phase E complete (E1–E5):** `scripts/quick-start.sh` (venv → runtime deps → seed
+  if absent → uvicorn on **8090**); `README.md` finalized, with new `LOCAL_SETUP.md`
+  and `TECH_STACK.md`; the case study **finalized and verified claim-by-claim**
+  against the code (vendor count 3→4, notebook framing off "trend", SQLite row
+  count "hundreds"→"dozen", HTMX size 48→50 KB, upsert key → `(competitor, product,
+  valid_from)`, and the §6 trend sentence made accurate); PLANBOOK + CHANGELOG
+  entries. Publishing (E6) is deliberately held for an explicit go-ahead.
 - **Phase D complete:** `notebooks/pricing_walkthrough.ipynb` — 15 cells (8 code, 7
   markdown, zero failed). Repo-root discovery by walking up from the kernel's cwd
   (a notebook has no `__file__`) feeding the **same** `import_paths.py` bootstrap;
@@ -61,7 +69,7 @@ and `CHANGELOG.md` (dated change entries).
 | **B** | Data layer: schema, seed JSON, idempotent scraper, tests | A | ✅ complete |
 | **C** | Dashboard + API: FastAPI, `_is_htmx()`, templates, tests | B | ✅ complete |
 | **D** | Jupyter walkthrough + notebook deps + CI notebook gate | B | ✅ complete |
-| **E** | Docs, `quick-start.sh`, publish, tag `v1.0.0` | C + D | ⬜ not started |
+| **E** | Docs, `quick-start.sh`, publish, tag `v1.0.0` | C + D | 🟡 E1–E5 done; E6 (publish) pending |
 
 Step-level build notes and per-phase verification are maintained by the repo
 owner outside this repository.
@@ -96,6 +104,8 @@ Live scraping of real vendor sites, any database server, authentication, Docker,
 deployment infrastructure, and a React implementation.
 
 ## Revision history
+
+- 2026-10-06: **Phase E — docs and the one-command bootstrap landed (E1–E5); publish held for review** — added `scripts/quick-start.sh`: create `.venv` if absent, install `requirements.txt`, seed the database from `sample_data.json` **only when it is missing**, then `exec uvicorn --app-dir pricing-dashboard app:app` on **8090**. No arguments, safe to re-run, `bash -n` clean. Replaced the Phase A `README.md` stub with the real landing page (disclaimer, quick start, architecture diagram, component summary, layout table, docs index), and wrote `LOCAL_SETUP.md` (prerequisites → quick start → by-hand steps → ports → tests → notebook → env vars → troubleshooting) and `TECH_STACK.md` (every runtime and dev tool with its rationale, plus the deliberately-absent list). **Finalized `01_PRICING_SCRAPER_CASE_STUDY.md` against the code**: the draft banner becomes a verified note, and each claim was checked — vendor count 3 → **4** (§1, §4.1); the notebook's job reworded from "what is the trend" to positioning/spread/coverage (§2), since the notebook plots one snapshot rather than a time series; SQLite "a few hundred rows" → **a few dozen** (19 observations) and HTMX "~48 KB" → **~50 KB** (§3, measured); the FastAPI rationale reworded to drop a cross-repo claim a public reader cannot verify (§3); the upsert key `(competitor, product, date)` → **`(competitor, product, valid_from)`** (§4.3); and the §6 trend sentence rewritten so it says the schema *supports* a series (superseded windows are closed, not overwritten) while the notebook plots a single snapshot. `SYSTEM_SNAPSHOT.md` refreshed (quick start + docs in Key Paths, Phase E change log). Verified: full gate green (36 tests + notebook, 0 error cells); `bash -n scripts/quick-start.sh` clean.
 
 - 2026-10-06: **Phase D — Jupyter walkthrough landed** — added `notebooks/pricing_walkthrough.ipynb` (15 cells: 8 code, 7 markdown, zero failed). It locates the repo root by walking up from the kernel's working directory — a notebook has no `__file__`, so this is how it finds the repo without hard-coding a path — and then reuses the **one** `import_paths.py` bootstrap so `schema`/`scraper` import by name, exactly as the tests and app do. It opens `market_data.db` directly and **calls `seed_from_json()` when the database is absent**, so a fresh clone and CI run it with no prior step; the write is idempotent. The analysis: the `valid_to IS NULL` current-price view (19 rows) → a SKU × vendor pivot ordered small→large → a per-SKU reduction (cheapest/priciest vendor, absolute and relative spread) → the price index vs. cheapest plus a coverage count, which surfaces Hetzner's missing `nano` plan as a gap rather than a win. Three matplotlib figures, each inline and paired with its insight: a grouped bar by plan, a cheapest-vs-priciest bar, and a price-index heatmap. `requirements-dev.txt` gained the notebook closure (`jupyter`, `matplotlib`, `pandas` + transitive deps, pinned from the same `pip freeze`); `requirements.txt` is **unchanged** — the split is exactly the freeze minus the runtime manifest. The notebook gate (`jupyter nbconvert --to notebook --execute --stdout …`) was **appended to `probe_config.yaml` → `tests.command`** so the local pre-commit hook and CI share one gate and cannot drift; `.github/workflows/ci.yml`'s step/comment were updated to say so (still inlined and hermetic — the notebook seeds its own database). Also corrected the case study's "four charts" to "three charts" to match. Verified: full gate run (`.venv/bin/python -m pytest tests/ -q && jupyter nbconvert --execute …`) exits 0 — 36 tests green, notebook executes with **0** `output_type: error` cells; with `market_data.db` moved aside the notebook still exits 0 and **self-seeds 4/5/19/1**; a deliberately broken notebook makes the same gate exit **1** with `CellExecutionError` on stderr.
 

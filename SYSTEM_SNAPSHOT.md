@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-06
 **Branch:** main
-**Phase:** D (Jupyter walkthrough) — see `PLANBOOK.md`
+**Phase:** E (docs + publish) — see `PLANBOOK.md`
 **DB:** `pricing-scraper/data/market_data.db` (48 KB, SQLite — not committed, seeded on demand)
 **Tests:** 36 passing (`tests/test_scraper.py` — schema + idempotent seed + closed windows;
 `tests/test_dashboard.py` — 21 hermetic dashboard tests). The gate also executes
@@ -17,7 +17,7 @@
 | Dashboard (`FastAPI` + `HTMX`) | built — `pricing-dashboard/app.py`; vendored HTMX (`static/htmx.min.js`, never a CDN); JSON API at `/api/pricing` |
 | Port | **8090**, served by this app. 8000 and 8002 are in use by other local services; 8001 is reserved and unbound here. |
 | Notebook walkthrough | built — `notebooks/pricing_walkthrough.ipynb`; 8 code cells, 3 matplotlib figures; executed headlessly by the gate |
-| `scripts/quick-start.sh` | not built (Phase E) |
+| `scripts/quick-start.sh` | built — venv → runtime deps → seed DB if absent → uvicorn on 8090; the one-command bootstrap |
 
 There are no systemd units, no timers and no remote host for this repo. It is a
 local-only, on-demand showcase application.
@@ -38,6 +38,9 @@ local-only, on-demand showcase application.
 | `pricing-dashboard/static/` | Vendored `htmx.min.js` (never a CDN) + `style.css` |
 | `notebooks/pricing_walkthrough.ipynb` | Analysis + charts — opens SQLite directly, seeds it if absent, 3 matplotlib figures |
 | `probe_config.yaml` | Test command — single source of truth for the hook and CI |
+| `scripts/quick-start.sh` | One-command bootstrap — venv → deps → seed if absent → uvicorn on 8090 |
+| `README.md` · `LOCAL_SETUP.md` · `TECH_STACK.md` | Landing page · run instructions · tooling rationale |
+| `01_PRICING_SCRAPER_CASE_STUDY.md` | Design narrative, finalized against the shipped code |
 | `PLANBOOK.md` | Master operating state |
 
 ## Configuration
@@ -55,6 +58,30 @@ local-only, on-demand showcase application.
 - `secrets_config.yaml` — committed; default forbidden-pattern set.
 
 ## Changes This Session (2026-10-06)
+
+### Phase E — docs, quick start, publish prep (E1–E5)
+
+- **`scripts/quick-start.sh`** (new, executable) — the one-command bootstrap:
+  create `.venv` if absent → `pip install -r requirements.txt` → seed
+  `market_data.db` from `sample_data.json` **only if missing** → `exec uvicorn
+  --app-dir pricing-dashboard app:app` on **8090**. No arguments, safe to re-run;
+  `bash -n` clean.
+- **`README.md`** — replaced the Phase A stub with the real landing page: the
+  illustrative-data disclaimer, quick start, the architecture diagram, a component
+  summary, the layout table and the docs index. **`LOCAL_SETUP.md`** (new) —
+  prerequisites, quick start, the by-hand steps, ports, tests, the notebook, env
+  vars and troubleshooting. **`TECH_STACK.md`** (new) — every runtime and
+  development tool with its rationale, plus the deliberately-absent list.
+- **`01_PRICING_SCRAPER_CASE_STUDY.md`** — **finalized**. The Phase A draft banner
+  is replaced with a verified-against-code note, and every claim was checked
+  against the implementation. Corrections: vendor count 3 → **4** (§1, §4.1); the
+  notebook's framing changed from "what is the trend" to positioning/spread/
+  coverage (§2 — the notebook plots one snapshot, not a time series); SQLite "a few
+  hundred rows" → **a few dozen** (19 observations) and HTMX "~48 KB" → **~50 KB**
+  (§3); the FastAPI rationale reworded to drop an unverifiable cross-repo claim
+  (§3); the upsert key `(competitor, product, date)` → **`(competitor, product,
+  valid_from)`** (§4.3); and the §6 trend sentence reworded to say the schema
+  *supports* a series while the notebook plots a single snapshot.
 
 ### Phase D — Jupyter walkthrough
 

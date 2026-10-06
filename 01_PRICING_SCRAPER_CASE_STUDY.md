@@ -1,8 +1,8 @@
 # Case Study: A Competitor Pricing Pipeline
 
-> **DRAFT — Phase A.** This is the design narrative written *ahead* of the code.
-> Phase E1 finalizes it against the shipped implementation and verifies every
-> claim. Anything below that the code does not do is a bug in this document.
+> **Finalized in Phase E** against the shipped implementation: every claim below
+> was checked against `pricing-scraper/`, `pricing-dashboard/` and `notebooks/`.
+> Where this document and the code disagreed, the code won.
 
 **All pricing data in this project is illustrative.** It was not collected from
 live vendor sites. Values are fixed at `data_as_of: 2026-10-01` and vendor names
@@ -14,7 +14,7 @@ with, endorsed by, or acting on behalf of any vendor mentioned.
 ## 1. Problem Statement
 
 Competitive pricing is a moving target. A team that wants to know where it sits
-against three named competitors, across a handful of comparable SKUs, is asking a
+against four named competitors, across a handful of comparable SKUs, is asking a
 question that never stops needing an answer — and the manual version of that
 answer (open three pricing pages, copy numbers into a spreadsheet, remember what
 changed last month) decays the moment it is written down. It is slow, it is
@@ -67,17 +67,18 @@ fragility of a scraper.
 ```
 
 Two consumers sit on the same database. The dashboard answers *"what is the price
-right now?"* and the notebook answers *"what is the trend, and what does it mean?"*
-Keeping them separate is what lets the dashboard stay small: it ships no charting
-library at all.
+right now, and who is cheapest for this SKU?"* — the grid and the search view. The
+notebook answers *"what is the shape of this market, and where are the gaps?"* —
+positioning, spread and coverage. Keeping them separate is what lets the dashboard
+stay small: it ships no charting library at all.
 
 ## 3. Stack & Tools
 
 | Choice | Why this and not the alternative |
 |---|---|
-| **SQLite** | The entire dataset is a few hundred rows. A database server would be pure operational overhead for a repo whose value is being clonable and runnable in one command. |
-| **FastAPI** | Typed request handling, automatic OpenAPI docs, and the same framework as the sibling services in this portfolio — so the dashboard's structure is recognizable rather than novel. |
-| **HTMX (vendored)** | Server-rendered HTML with fragment swaps gives real interactivity with no build step and no client-side state to keep in sync. Vendoring the ~48 KB file means the app works offline and the repo has no CDN dependency. |
+| **SQLite** | The entire dataset is a few dozen rows (19 price observations). A database server would be pure operational overhead for a repo whose value is being clonable and runnable in one command. |
+| **FastAPI** | Typed query parameters (the search route binds `products: str`), automatic OpenAPI docs at `/docs`, and a template story that keeps the shell-versus-fragment split explicit. |
+| **HTMX (vendored)** | Server-rendered HTML with fragment swaps gives real interactivity with no build step and no client-side state to keep in sync. Vendoring the ~50 KB file means the app works offline and the repo has no CDN dependency. |
 | **Jinja2** | Already the FastAPI templating default; keeps the shell/fragment split explicit. |
 | **pandas + matplotlib (notebook)** | Standard, inspectable, and good enough for the three charts the analysis actually needs. |
 
@@ -88,7 +89,7 @@ any container.
 
 ### 4.1 Seeded data instead of live scraping
 
-The pipeline's *shape* is the deliverable, not its input. Scraping three real
+The pipeline's *shape* is the deliverable, not its input. Scraping four real
 vendor pricing pages would add anti-bot handling, rate limiting, brittle CSS
 selectors and terms-of-service risk — all of which would need to be maintained for
 the demo to keep working, and all of which would obscure the architecture.
@@ -111,8 +112,8 @@ so a fresh clone proves the ingestion path end to end.
 
 The scraper is safe to run any number of times. Dimension rows (`competitors`,
 `products`) are inserted with `INSERT OR IGNORE` against a natural key, and pricing
-rows are upserted on `(competitor, product, date)`. A second run over unchanged
-input changes no row counts — which is the property that makes a scheduled re-run
+rows are upserted on `(competitor, product, valid_from)` — the natural key for an
+observation. A second run over unchanged input changes no row counts — which is the property that makes a scheduled re-run
 safe, and the property the test suite asserts directly.
 
 ### 4.4 The shell-versus-fragment split
@@ -145,6 +146,9 @@ Run instructions live in `LOCAL_SETUP.md` (`./scripts/quick-start.sh`), and the
 analysis narrative lives in the notebook. Tooling rationale is in `TECH_STACK.md`.
 
 The natural extensions are the ones the schema was designed to accept without
-refactoring: **add competitors or products** (rows in `sample_data.json`), and
-**track history over time** (`pricing_history` already carries `valid_from` /
-`valid_to`, so a second snapshot turns the grid into a trend line).
+refactoring. **Add competitors or products** by adding rows to `sample_data.json`
+— no code change is required. **Track history over time** by seeding a second
+snapshot with a later `data_as_of`: ingestion closes the previous price window
+rather than overwriting it, so a superseded price stays queryable and a trend
+becomes a query over `pricing_history`. The notebook today plots a single
+snapshot's positioning; a second snapshot is what would turn that into a series.
