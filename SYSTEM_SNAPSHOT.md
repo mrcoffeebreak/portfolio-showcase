@@ -46,7 +46,8 @@ local-only, on-demand showcase application.
 - **Phase A — repo scaffolded from nothing.** `git init -b main`, MIT `LICENSE`,
   `README.md` stub, `.gitignore`.
 - **Local git hooks installed** — `scripts/git-hooks/{pre-commit,pre-push,post-checkout}`,
-  `core.hooksPath = scripts/git-hooks`. The hook bundle itself is not published.
+  `core.hooksPath = scripts/git-hooks`. Local-only: neither the hook bundle nor the
+  symlinks are tracked, so a clone simply has no hooks.
 - **The seeded database is deliberately not committed**; `sample_data.json` is the
   committed source of truth and `scripts/quick-start.sh` will seed on demand.
 - **Port 8090 reserved** for the dashboard. Verified 2026-10-06: 8000 and 8002 are in

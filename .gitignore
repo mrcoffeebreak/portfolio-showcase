@@ -18,8 +18,15 @@ venv/
 logs/
 
 # --- Local git hooks (developer convenience; not published) ---
-scripts/git-hooks/dev-tools/
-.dev-tools-version
+# The hook installer clones hook bodies into scripts/git-hooks/ and symlinks
+# pre-commit / pre-push / post-checkout there. None of it is published: the
+# symlinks would dangle on a fresh clone, and `core.hooksPath` is local git
+# config that is not cloned either, so they could never run there anyway.
+#
+# Machine-specific ignores go in the local, unpublished .git/info/exclude — not
+# here — because this file is published. That is where the installer's version
+# stamp lives (it embeds a commit hash from another repository).
+scripts/git-hooks/
 repo_owners.yaml
 
 # --- Seeded SQLite database ---

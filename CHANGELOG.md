@@ -11,8 +11,8 @@ All notable changes to this repo are documented here. Newest first.
   mirror.
 - **tooling:** local git hooks installed and pinned at **v0.2.2** —
   `scripts/git-hooks/{pre-commit,pre-push,post-checkout}`, `core.hooksPath` set,
-  starter `secrets_config.yaml` and `repo_owners.yaml` seeded. The hook bundle
-  itself is not published.
+  starter `secrets_config.yaml` and `repo_owners.yaml` seeded. The hooks are a
+  local-only convenience: neither the hook bundle nor the symlinks are published.
 - **ci:** `.github/workflows/ci.yml` drafted with **inlined, hermetic** steps: it
   installs both manifests, validates `probe_config.yaml`, and runs the test command
   from `probe_config.yaml` → `tests.command` (the same single source of truth the
@@ -45,6 +45,12 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Fixed
 
+- **repo:** Untracked the git-hook symlinks. They pointed into a gitignored
+directory, so a fresh clone got three **dangling symlinks** — and because
+`core.hooksPath` is local git config that is not cloned, they could never have run
+there anyway. `scripts/git-hooks/` is now ignored wholesale, and the installer's
+version stamp (which embeds another repository's commit hash) is ignored via the
+local, unpublished `.git/info/exclude` rather than the published `.gitignore`.
 - **docs:** Corrected port ownership, and removed private context. The earlier wording
   claimed 8000 *and* 8001 were both in use locally; the verified state is that **8000
   and 8002** are in use and **8001** is unbound here (reserved elsewhere).

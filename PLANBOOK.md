@@ -51,6 +51,10 @@ owner outside this repository.
    manifest lean.
 8. **CI is hermetic and inlined** — it never depends on a script from a
    gitignored directory, which would be absent from a GitHub checkout.
+9. **Local tooling is never published.** `scripts/git-hooks/` is ignored wholesale,
+   and machine-local files that embed outside references (the installer's version
+   stamp) are ignored through `.git/info/exclude` rather than the published
+   `.gitignore`.
 
 ## Non-goals
 
