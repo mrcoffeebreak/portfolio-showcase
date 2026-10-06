@@ -82,6 +82,11 @@ local-only, on-demand showcase application.
   (§3); the upsert key `(competitor, product, date)` → **`(competitor, product,
   valid_from)`** (§4.3); and the §6 trend sentence reworded to say the schema
   *supports* a series while the notebook plots a single snapshot.
+- **Pre-publish hygiene sweep** — every tracked file was searched for private
+  repository names, hostnames, account names and absolute paths. Exactly one leak
+  was found: the notebook's stored setup output printed the absolute repo root
+  (`/home/<user>/…`). The cell now prints the directory **name** only; the sweep is
+  clean, and the code and its stored output agree.
 
 ### Phase D — Jupyter walkthrough
 

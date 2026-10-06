@@ -189,6 +189,10 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Fixed
 
+- **notebook (pre-publish hygiene):** the setup cell's stored output printed the
+  absolute repository path, which would have published a local filesystem location
+  (and the local username) to a public repo. It now prints the directory *name*
+  only; a sweep over every tracked file confirms no absolute path remains.
 - **docs:** the case study claimed the notebook ships "four charts"; the walkthrough
   ships three. Corrected so the draft matches the implementation it describes.
 - **data:** `valid_to` was never populated, so every observation stayed "open" and
