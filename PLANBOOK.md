@@ -10,10 +10,16 @@ and `CHANGELOG.md` (dated change entries).
 
 - **Last reconciled:** 2026-10-06 (`main`). **Phase A + B complete**, committed;
   no `origin` remote yet, so CI is drafted but not yet exercised.
-- **Status:** Data layer complete. Schema, seed JSON, idempotent scraper and a green
-  13-test suite are in place. No dashboard, notebook or `quick-start.sh` yet.
+- **Status:** Data layer complete. Schema, seed JSON, idempotent scraper (with a
+  proper open/closed price window) and a green **15-test** suite are in place. No
+  dashboard, notebook or `quick-start.sh` yet.
+- **Phase B remediation (B5–B6) complete:** `seed_from_json` now closes the earlier
+  opening at ingest (ruling #10), so exactly one `valid_to IS NULL` row remains per
+  `(competitor, product)`; and a single documented `import_paths.py` bootstrap puts
+  `pricing-scraper/` on `sys.path` for tests (and, later, the app and notebook),
+  replacing the hand-rolled `conftest.py` wiring (ruling #12).
 - **Phase B complete:** `pricing-scraper/{schema.py,scraper.py,sample_data.json}` and
-  `tests/`; 13 tests green; a scraper re-run leaves row counts unchanged
+  `tests/`; a scraper re-run leaves row counts unchanged
   (4 competitors / 5 products / 19 prices / 1 snapshot). `probe_config.yaml`'s test
   command narrowed to the canonical `.venv/bin/python -m pytest tests/ -q`, with CI
   provisioning a root `.venv` so the same command runs in both places.
@@ -68,6 +74,7 @@ deployment infrastructure, and a React implementation.
 
 ## Revision history
 
+- 2026-10-06: **Phase B remediation (B5–B6) — close the price window and unify the import bootstrap** — `pricing-scraper/scraper.py`: `seed_from_json` now closes the prior open price window at ingest (an earlier row's `valid_to` is set to the new `valid_from`; the comparison is strict so a same-date re-run stays idempotent), restoring the documented "`valid_to IS NULL` is the current price" invariant. `pricing-scraper` unchanged in layout. Added `import_paths.py` at the repo root — the single documented `__file__`-relative `sys.path` bootstrap for `pricing-scraper/` — and rewrote `tests/conftest.py` to use it (replacing the hand-rolled version) so the app and notebook will share one mechanism. Added a **local-only, gitignored** `.vscode/settings.json` with `python.analysis.extraPaths = ["pricing-scraper"]`. `tests/test_scraper.py` gained two tests (13 → **15**): the one-open-row-per-`(competitor, product)` invariant and closed prior window after a later-dated snapshot, and the different-`data_as_of` snapshot case that closes the residual test gap in note #9. Verified: 15 tests green; same-date re-run counts unchanged (4/5/19/1); a `2026-11-01` run after `2026-10-01` → 38 price rows, 2 snapshot rows, 19 open rows for 19 pairs, 0 prior rows still open.
 - 2026-10-06: **Phase B — data layer landed** — `pricing-scraper/schema.py` (4 tables: `competitors`, `products`, `pricing_history` with a `valid_from`/`valid_to` window, `pricing_snapshots`) plus `init_db()` / `connect()`; `pricing-scraper/sample_data.json` as the committed seed source of truth (4 vendors × 5 SKUs, 19 illustrative prices, `data_as_of: "2026-10-01"`, root disclaimer); `pricing-scraper/scraper.py` with idempotent `seed_from_json()` (`INSERT OR IGNORE` dimensions, price upsert on `(competitor, product, valid_from)`, one transaction, one snapshot row per run). Added `tests/` — 13 tests covering clean create, run-twice idempotency, FK resolution, unknown-reference rejection and the one-snapshot-row guarantee. Narrowed `probe_config.yaml`'s test command to `.venv/bin/python -m pytest tests/ -q` and made CI provision a root `.venv` so the same command runs in both places. Verified: 13 tests green; scraper run twice → counts unchanged (4/5/19/1).
 - 2026-10-06: **Docs — corrected port ownership and de-identified the public docs** — The Phase A wording implied 8000 *and* 8001 were both in use locally; the verified state is that **8000 and 8002** are in use and **8001** is unbound here (reserved elsewhere). `AGENTS.md` (⇄ `.github/copilot-instructions.md`), `SESSION_RITUAL.md` (port table + the `ss -ltnp | grep -E ':(8000|8001|8002|8090)'` check), `SYSTEM_SNAPSHOT.md`, `CHANGELOG.md` and `.gitignore` updated. This entry also removes references to private sibling repositories, internal hostnames and plan-internal labels from every published file, ahead of the repo going public.
 - 2026-10-06: **Phase A — repo scaffolded and house conventions installed** — `git init -b main`, MIT `LICENSE`, `README.md` stub, `.gitignore`. Installed the local git hooks (pinned **v0.2.2**): `pre-commit`/`pre-push`/`post-checkout` under `scripts/git-hooks/`, `core.hooksPath` set. Trimmed `probe_config.yaml` for a single-machine app (empty `services`/`timers`, no `ssh` block) with the test command as the single gate shared by the hook and CI. Added `requirements.txt` + `requirements-dev.txt` and a draft `.github/workflows/ci.yml` so the publish step is meaningful. Wrote the house doc set (`AGENTS.md` ⇄ `.github/copilot-instructions.md`, `PLANBOOK.md`, `CHANGELOG.md`, `SYSTEM_SNAPSHOT.md`, `SESSION_RITUAL.md`), adapted to a no-SSH ritual. Drafted `01_PRICING_SCRAPER_CASE_STUDY.md`. Recorded the seeded-DB decision (not committed) and reserved port 8090. No tests yet — `probe_config.yaml` carries a temporary `[ ! -d tests ]` guard that Phase B removes.

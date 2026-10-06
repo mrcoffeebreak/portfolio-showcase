@@ -6,6 +6,15 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Added
 
+- **tooling:** `import_paths.py` — the single documented, `__file__`-relative
+  `sys.path` bootstrap for the hyphenated `pricing-scraper/` directory. Resolved
+  from the module's own `__file__` (never the working directory), it is shared by
+  the test suite today and the dashboard/notebook later — no rename, no editable
+  install, no per-module one-off.
+- **tests:** two more tests in `tests/test_scraper.py` (13 → **15**) — the
+  one-open-row-per-`(competitor, product)` invariant with a closed prior window
+  after a later-dated snapshot, and the different-`data_as_of` case that pins the
+  snapshot-row semantics.
 - **repo:** Initial scaffold — `git init -b main`, MIT `LICENSE`, `README.md` stub
   (landing page is finalized in Phase E), `.gitignore`, and the `.github/` prompt
   mirror.
@@ -49,6 +58,19 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Changed
 
+- **data:** `seed_from_json` now **closes the prior price window at ingest**. Before
+  a newer observation is written, the earlier open row's `valid_to` is set to the
+  new `valid_from`, so exactly one row per `(competitor, product)` keeps
+  `valid_to IS NULL` (the documented "current price" marker) and a superseded row
+  carries a real closed window. The `valid_from <` comparison is strict, so a
+  same-date re-run remains idempotent; all writes stay in the one transaction.
+- **tests:** `tests/conftest.py` no longer hand-rolls `sys.path`; it delegates to
+  the shared `import_paths.add_pricing_scraper_to_path()`, so there is exactly one
+  bootstrap into `pricing-scraper/` and the suite imports `schema` / `scraper` by
+  name from any working directory.
+- **config (local, not published):** `.vscode/settings.json` (gitignored) sets
+  `python.analysis.extraPaths = ["pricing-scraper"]` so the editor agrees with the
+  runtime import bootstrap.
 - **config:** `probe_config.yaml` trimmed for a single-machine app — no `ssh` block,
   empty `services`/`timers`, no inert `ports:`/`cron:` keys, and the test command set
   to the venv-first form used by both the hook and CI.
@@ -73,6 +95,13 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Fixed
 
+- **data:** `valid_to` was never populated, so every observation stayed "open" and
+  the documented `valid_to IS NULL` idiom returned one row per pair per snapshot.
+  `seed_from_json` now closes the previous window when a newer snapshot is ingested,
+  restoring the invariant.
+- **tests:** the same-date re-run test could not distinguish "keyed on
+  `snapshot_date`" from "always exactly one row, ever"; a run declaring a later
+  `data_as_of` now asserts exactly one additional `pricing_snapshots` row.
 - **repo:** Untracked the git-hook symlinks. They pointed into a gitignored
 directory, so a fresh clone got three **dangling symlinks** — and because
 `core.hooksPath` is local git config that is not cloned, they could never have run

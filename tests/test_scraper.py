@@ -8,7 +8,11 @@ The suite covers the four properties Phase B promises:
 3. Foreign keys resolve: every ``pricing_history`` row joins to a real
    competitor and product, and the declared names map to the declared prices.
 4. A run records exactly one ``pricing_snapshots`` row, keyed on the snapshot
-   date, so "one row per run" survives a re-run on the same date.
+   date, so "one row per run" survives a re-run on the same date. A run that
+   declares a *later* ``data_as_of`` adds exactly one more row.
+5. A later snapshot **closes** the prior price window: exactly one row per
+   ``(competitor, product)`` keeps ``valid_to IS NULL``, and the earlier row's
+   ``valid_to`` equals the new ``valid_from``.
 
 All tests use a temporary database; the committed ``sample_data.json`` is the
 seed source, so a change to that file is exercised here too.
@@ -57,6 +61,23 @@ def table_counts(db_path: Path) -> dict[str, int]:
         }
     finally:
         conn.close()
+
+
+def shifted_snapshot(directory: Path, snapshot_date: str) -> Path:
+    """Write a seed file identical to ``SAMPLE_DATA`` but declaring a later date.
+
+    Both the root ``data_as_of`` and every pricing row's ``date`` are advanced,
+    which is what a genuine later scrape would produce: same vendors and SKUs,
+    a new observation window.
+    """
+    payload = json.loads(SAMPLE_DATA.read_text(encoding="utf-8"))
+    payload["data_as_of"] = snapshot_date
+    for row in payload["pricing"]:
+        row["date"] = snapshot_date
+
+    path = directory / f"sample_data_{snapshot_date}.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
 
 
 # ── schema.init_db ────────────────────────────────────────────────────────────
@@ -255,6 +276,88 @@ def test_one_snapshot_row_per_run_survives_a_rerun(db_path: Path) -> None:
     assert rows[0]["snapshot_date"] == "2026-10-01"
     assert rows[0]["data_as_of"] == "2026-10-01"
     assert rows[0]["row_count"] == EXPECTED_COUNTS["pricing_history"]
+
+
+def test_later_snapshot_closes_the_prior_window(db_path: Path, tmp_path: Path) -> None:
+    """A newer snapshot closes the older window — one open row per pair (B5).
+
+    This is the invariant the plan's ruling #10 restores: after any number of
+    snapshots ``valid_to IS NULL`` still identifies exactly one current price per
+    ``(competitor, product)``, and the superseded row is closed at the new date.
+    """
+    later = shifted_snapshot(tmp_path, "2026-11-01")
+
+    scraper.seed_from_json(db_path, SAMPLE_DATA)
+    scraper.seed_from_json(db_path, later)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        # No (competitor, product) has anything other than exactly one open row.
+        offenders = conn.execute(
+            """
+            SELECT competitor_id, product_id
+            FROM pricing_history
+            WHERE valid_to IS NULL
+            GROUP BY competitor_id, product_id
+            HAVING COUNT(*) <> 1
+            """
+        ).fetchall()
+        open_rows = conn.execute(
+            "SELECT COUNT(*) FROM pricing_history WHERE valid_to IS NULL"
+        ).fetchone()[0]
+        pair_count = conn.execute(
+            "SELECT COUNT(*) FROM ("
+            "    SELECT DISTINCT competitor_id, product_id FROM pricing_history"
+            ")"
+        ).fetchone()[0]
+        # Every prior window is closed at the new valid_from, not left open.
+        stale_prior = conn.execute(
+            """
+            SELECT COUNT(*) FROM pricing_history
+            WHERE valid_from = '2026-10-01' AND valid_to IS NOT '2026-11-01'
+            """
+        ).fetchone()[0]
+        new_open = conn.execute(
+            """
+            SELECT COUNT(*) FROM pricing_history
+            WHERE valid_from = '2026-11-01' AND valid_to IS NULL
+            """
+        ).fetchone()[0]
+    finally:
+        conn.close()
+
+    assert offenders == []
+    assert open_rows == pair_count == EXPECTED_COUNTS["pricing_history"]  # 19
+    assert stale_prior == 0
+    assert new_open == EXPECTED_COUNTS["pricing_history"]
+
+
+def test_later_snapshot_adds_exactly_one_snapshot_row(
+    db_path: Path, tmp_path: Path
+) -> None:
+    """A run declaring a different ``data_as_of`` adds one snapshot row (B5).
+
+    Closes the residual gap from ruling #9: the same-date re-run test cannot tell
+    "keyed on snapshot_date" apart from "always exactly one row, ever". Asserting
+    the pair of dates pins the semantics.
+    """
+    later = shifted_snapshot(tmp_path, "2026-11-01")
+
+    scraper.seed_from_json(db_path, SAMPLE_DATA)
+    scraper.seed_from_json(db_path, later)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        dates = [
+            row[0]
+            for row in conn.execute(
+                "SELECT snapshot_date FROM pricing_snapshots ORDER BY snapshot_date"
+            )
+        ]
+    finally:
+        conn.close()
+
+    assert dates == ["2026-10-01", "2026-11-01"]
 
 
 # ── the seed file is the committed source of truth ────────────────────────────

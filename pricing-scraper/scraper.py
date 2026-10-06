@@ -13,6 +13,12 @@ How idempotency is achieved:
 - Price rows upsert on ``(competitor_id, product_id, valid_from)`` — the natural
   key for an observation. Re-seeding the same snapshot date updates the price in
   place rather than appending a duplicate.
+- Before a newer observation is written, any earlier **open** window for the same
+  ``(competitor_id, product_id)`` is closed by setting ``valid_to`` to the new
+  ``valid_from``. Exactly one row per pair therefore keeps ``valid_to IS NULL``
+  — the documented "current price" marker — even after many snapshots. The
+  comparison is strict (``valid_from < new valid_from``), so a same-date re-run
+  never disturbs the window it is about to upsert.
 - The run records exactly one ``pricing_snapshots`` row, keyed on
   ``snapshot_date`` (the declared ``data_as_of``), and upserts it too.
 
@@ -109,6 +115,28 @@ def seed_from_json(db_path: str | Path, data_file: str | Path) -> dict[str, int]
                         f"pricing row references unknown product SKU: {product_sku!r}"
                     )
 
+                competitor_id = competitor_ids[competitor_name]
+                product_id = product_ids[product_sku]
+                valid_from = row.get("date", data_as_of)
+
+                # Close any earlier open window for this (competitor, product)
+                # before the new one is written, so exactly one row per pair
+                # keeps `valid_to IS NULL` (the documented "current price"
+                # marker). The comparison is strict: `valid_from < new
+                # valid_from` leaves the same-date row this run is about to
+                # upsert untouched, so a same-date re-run stays idempotent.
+                conn.execute(
+                    """
+                    UPDATE pricing_history
+                       SET valid_to = ?
+                     WHERE competitor_id = ?
+                       AND product_id = ?
+                       AND valid_to IS NULL
+                       AND valid_from < ?
+                    """,
+                    (valid_from, competitor_id, product_id, valid_from),
+                )
+
                 conn.execute(
                     """
                     INSERT INTO pricing_history
@@ -119,11 +147,11 @@ def seed_from_json(db_path: str | Path, data_file: str | Path) -> dict[str, int]
                                   currency = excluded.currency
                     """,
                     (
-                        competitor_ids[competitor_name],
-                        product_ids[product_sku],
+                        competitor_id,
+                        product_id,
                         row["price"],
                         row.get("currency", default_currency),
-                        row.get("date", data_as_of),
+                        valid_from,
                     ),
                 )
 
