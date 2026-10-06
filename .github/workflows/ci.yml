@@ -6,11 +6,16 @@
 # The local git hooks are a developer convenience and are deliberately not part
 # of CI.
 #
+# The job provisions a repository-root `.venv` and installs both manifests into
+# it, so the test command in probe_config.yaml (`.venv/bin/python -m pytest ...`)
+# runs identically here and on a developer machine — the same interpreter, the
+# same command. This keeps the local pre-commit hook and CI from drifting apart.
+#
 # Lint and type-check are omitted because nothing here configures them (no
 # ruff/mypy config, no .pre-commit-config.yaml, no `make lint`). Snapshot refresh
 # is skipped: it is meaningless on a runner. The test suite is driven by
 # probe_config.yaml → tests.command, the same single source of truth the local
-# pre-commit hook uses, so local and CI cannot drift.
+# pre-commit hook uses.
 name: CI
 
 on:
@@ -30,20 +35,21 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Create .venv and install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install -r requirements-dev.txt
 
       - name: Validate probe_config.yaml
         # Fail fast with a clear YAML error before the read below (mirrors the
         # pre-commit hook's local schema validation).
-        run: python3 -c "import yaml; yaml.safe_load(open('probe_config.yaml'))"
+        run: .venv/bin/python -c "import yaml; yaml.safe_load(open('probe_config.yaml'))"
 
       - name: Run hermetic tests (per probe_config.yaml tests.command)
         run: |
-          TEST_CMD="$(python3 -c "import yaml; print(yaml.safe_load(open('probe_config.yaml'))['tests']['command'])")"
+          TEST_CMD="$(.venv/bin/python -c "import yaml; print(yaml.safe_load(open('probe_config.yaml'))['tests']['command'])")"
           if [ -z "$TEST_CMD" ]; then
             echo "❌ probe_config.yaml → tests.command is empty or missing"
             exit 1

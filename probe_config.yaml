@@ -25,14 +25,15 @@ timers: []
 databases:
   - path: pricing-scraper/data/market_data.db
 
-# Hermetic unit tests (tests/). Prefers the repo venv when present; falls back to
-# the runner python, which CI provisions via requirements-dev.txt.
+# Hermetic unit tests (tests/), run with the repo venv — the same interpreter and
+# command locally and in CI. CI provisions a root `.venv` before reading this
+# command (see .github/workflows/ci.yml), so the single command below works in
+# both places and the pre-commit hook and CI cannot drift apart.
 #
-# SCAFFOLDING GUARD: the `[ ! -d tests ]` branch exists only because the scaffold
-# lands before the test suite. Narrow this to the canonical command
-# `.venv/bin/python -m pytest tests/ -q` once tests/ exists.
+# Phase B narrowed this from the scaffold-era `[ ! -d tests ]` guard now that
+# tests/ exists.
 tests:
-  command: "if [ ! -d tests ]; then echo 'no tests/ yet (added in Phase B) — nothing to run'; elif [ -x .venv/bin/python ]; then .venv/bin/python -m pytest tests/ -q; elif [ -x venv/bin/python ]; then venv/bin/python -m pytest tests/ -q; else python3 -m pytest tests/ -q; fi"
+  command: ".venv/bin/python -m pytest tests/ -q"
 
 snapshot:
   path: SYSTEM_SNAPSHOT.md

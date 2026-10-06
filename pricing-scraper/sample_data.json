@@ -1,0 +1,43 @@
+{
+  "data_as_of": "2026-10-01",
+  "illustrative": true,
+  "disclaimer": "All pricing data in this file is illustrative and was not collected from live vendor sites. Values are fixed at data_as_of 2026-10-01. Vendor names are used to describe a realistic scenario only; this project is not affiliated with, endorsed by, or acting on behalf of any vendor mentioned.",
+  "currency": "USD",
+  "competitors": [
+    { "name": "DigitalOcean", "website": "https://www.digitalocean.com" },
+    { "name": "Linode", "website": "https://www.linode.com" },
+    { "name": "Vultr", "website": "https://www.vultr.com" },
+    { "name": "Hetzner", "website": "https://www.hetzner.com" }
+  ],
+  "products": [
+    { "sku": "nano",   "name": "1 vCPU / 1 GB",  "category": "shared" },
+    { "sku": "small",  "name": "1 vCPU / 2 GB",  "category": "shared" },
+    { "sku": "medium", "name": "2 vCPU / 4 GB",  "category": "shared" },
+    { "sku": "large",  "name": "4 vCPU / 8 GB",  "category": "general-purpose" },
+    { "sku": "xlarge", "name": "8 vCPU / 16 GB", "category": "general-purpose" }
+  ],
+  "pricing": [
+    { "competitor": "DigitalOcean", "product": "nano",   "price": 6.00,  "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "DigitalOcean", "product": "small",  "price": 12.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "DigitalOcean", "product": "medium", "price": 24.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "DigitalOcean", "product": "large",  "price": 48.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "DigitalOcean", "product": "xlarge", "price": 96.00, "date": "2026-10-01", "currency": "USD" },
+
+    { "competitor": "Linode", "product": "nano",   "price": 5.00,  "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Linode", "product": "small",  "price": 12.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Linode", "product": "medium", "price": 24.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Linode", "product": "large",  "price": 48.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Linode", "product": "xlarge", "price": 96.00, "date": "2026-10-01", "currency": "USD" },
+
+    { "competitor": "Vultr", "product": "nano",   "price": 5.00,  "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Vultr", "product": "small",  "price": 10.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Vultr", "product": "medium", "price": 18.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Vultr", "product": "large",  "price": 36.00, "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Vultr", "product": "xlarge", "price": 72.00, "date": "2026-10-01", "currency": "USD" },
+
+    { "competitor": "Hetzner", "product": "small",  "price": 4.59,  "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Hetzner", "product": "medium", "price": 5.99,  "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Hetzner", "product": "large",  "price": 8.99,  "date": "2026-10-01", "currency": "USD" },
+    { "competitor": "Hetzner", "product": "xlarge", "price": 16.99, "date": "2026-10-01", "currency": "USD" }
+  ]
+}

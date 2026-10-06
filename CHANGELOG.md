@@ -25,6 +25,27 @@ All notable changes to this repo are documented here. Newest first.
   adapted for a repo with **no remote host**: the ritual is read snapshot → run
   tests → check drift → smoke-check on port 8090 → update snapshot. No SSH.
 - **docs:** draft `01_PRICING_SCRAPER_CASE_STUDY.md`.
+- **data:** `pricing-scraper/schema.py` — SQLite schema + `init_db(path)`. Four
+  tables: natural-keyed `competitors` and `products`; `pricing_history` with a
+  `valid_from`/`valid_to` validity window (upsert key
+  `(competitor_id, product_id, valid_from)`); and `pricing_snapshots`, unique on
+  `snapshot_date`. Every statement is `CREATE ... IF NOT EXISTS`, and `connect()`
+  enforces `PRAGMA foreign_keys` on every connection.
+- **data:** `pricing-scraper/sample_data.json` — the committed seed source of truth:
+  four real vendor names (DigitalOcean, Linode, Vultr, Hetzner) across five comparable
+  SKUs (19 illustrative prices), with `data_as_of: "2026-10-01"`, `illustrative: true`
+  and the not-affiliated `disclaimer` at the root.
+- **data:** `pricing-scraper/scraper.py` — `seed_from_json(db_path, data_file)`:
+  `INSERT OR IGNORE` for the dimensions, price upsert on
+  `(competitor_id, product_id, valid_from)`, a single transaction, and exactly one
+  snapshot row keyed on the snapshot date. Idempotent — a re-run over unchanged input
+  leaves every row count unchanged.
+- **tests:** `tests/test_scraper.py` — 13 tests: schema creation and re-init; clean
+  seed counts; seeding twice leaves counts unchanged; a changed price updates in place;
+  foreign-key resolution and an orphan check; unknown-reference rejection; open
+  `valid_to`; one snapshot row per run; and the seed file's root disclaimer contract.
+  `tests/conftest.py` puts the hyphenated `pricing-scraper/` directory on `sys.path`
+  so the modules import by name.
 
 ### Changed
 
@@ -33,6 +54,13 @@ All notable changes to this repo are documented here. Newest first.
   to the venv-first form used by both the hook and CI.
 - **config:** `repo_owners.yaml` asserts the expected GitHub owner for this repo so
   the pre-push hook catches an account-crossing push (it is intended to be public).
+- **config:** `probe_config.yaml` → `tests.command` is now the canonical
+  `.venv/bin/python -m pytest tests/ -q`; the scaffold-era `[ ! -d tests ]` guard is
+  removed now that the suite exists.
+- **ci:** the workflow provisions a repository-root `.venv` and runs its validation and
+  test steps with it, so the command in `probe_config.yaml` executes identically locally
+  and in CI. (The job previously installed into the runner interpreter, which would have
+  made the narrowed command exit 127 on the runner while passing locally.)
 
 ### Decisions
 
@@ -64,6 +92,4 @@ local, unpublished `.git/info/exclude` rather than the published `.gitignore`.
 
 ### Known gaps
 
-- No tests yet — the suite lands in Phase B. `probe_config.yaml` carries a temporary
-  `[ ! -d tests ]` guard (documented inline) that Phase B removes.
-- No `origin` remote and no commits yet; publishing is Phase E.
+- No `origin` remote yet; publishing is Phase E.
