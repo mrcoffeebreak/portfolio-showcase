@@ -79,7 +79,7 @@ library at all.
 | **FastAPI** | Typed request handling, automatic OpenAPI docs, and the same framework as the sibling services in this portfolio — so the dashboard's structure is recognizable rather than novel. |
 | **HTMX (vendored)** | Server-rendered HTML with fragment swaps gives real interactivity with no build step and no client-side state to keep in sync. Vendoring the ~48 KB file means the app works offline and the repo has no CDN dependency. |
 | **Jinja2** | Already the FastAPI templating default; keeps the shell/fragment split explicit. |
-| **pandas + matplotlib (notebook)** | Standard, inspectable, and good enough for the four charts the analysis actually needs. |
+| **pandas + matplotlib (notebook)** | Standard, inspectable, and good enough for the three charts the analysis actually needs. |
 
 Deliberately absent: any ORM (the SQL is the point and it is short), any bundler,
 any container.

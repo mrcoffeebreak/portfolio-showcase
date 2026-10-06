@@ -6,6 +6,18 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Added
 
+- **notebook:** `notebooks/pricing_walkthrough.ipynb` — the analysis half of the
+  pipeline and this repo's first notebook. It finds the repository root by walking
+  up from the kernel's working directory (a notebook has no `__file__`), then
+  reuses the single `import_paths.py` bootstrap so `schema` / `scraper` import by
+  name exactly as the tests and app do. It opens `market_data.db` directly —
+  seeding it from the committed `sample_data.json` when it is absent, so a fresh
+  clone and CI both run it with no manual step — and walks from the
+  `valid_to IS NULL` current-price view through a SKU × vendor grid and a per-SKU
+  cheapest/priciest/spread reduction to a price index and a coverage check. Three
+  inline matplotlib figures (grouped bars, cheapest-vs-priciest, price-index
+  heatmap) each pair with an insight, and a closing section covers how the same
+  pipeline would run in production. 8 code cells, 7 markdown cells, zero failed.
 - **dashboard:** `pricing-dashboard/app.py` — one FastAPI app with an `APIRouter`
   exposing `/` (comparison grid), `/comparison` (search view),
   `/api/pricing` (all current prices as JSON) and `/api/pricing/{competitor}`
@@ -100,6 +112,18 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Changed
 
+- **ci:** the notebook is now part of the single shared gate. Phase D appended
+  `jupyter nbconvert --to notebook --execute --stdout
+  notebooks/pricing_walkthrough.ipynb > /dev/null` to `probe_config.yaml` →
+  `tests.command`, so the pre-commit hook and CI execute the walkthrough from one
+  source of truth — a broken notebook now blocks a commit as well as the build.
+  The `ci.yml` step name and header comment were updated to match; no step points
+  at a gitignored script and the notebook seeds its own database, so the job stays
+  inlined and hermetic.
+- **deps:** `requirements-dev.txt` gained the notebook toolchain — the pinned
+  `jupyter`, `matplotlib` and `pandas` closure. They are dev-only: `requirements.txt`
+  (runtime) is unchanged, and the split remains exactly `pip freeze` minus the
+  runtime manifest.
 - **deps:** `requirements.txt` and `requirements-dev.txt` are now **pinned** from a
   single `.venv/bin/pip freeze` and split so the runtime manifest stays lean.
   `requirements.txt` carries the pinned closure of `fastapi` + `uvicorn` + `jinja2`
@@ -143,6 +167,8 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Fixed
 
+- **docs:** the case study claimed the notebook ships "four charts"; the walkthrough
+  ships three. Corrected so the draft matches the implementation it describes.
 - **data:** `valid_to` was never populated, so every observation stayed "open" and
   the documented `valid_to IS NULL` idiom returned one row per pair per snapshot.
   `seed_from_json` now closes the previous window when a newer snapshot is ingested,

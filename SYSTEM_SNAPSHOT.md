@@ -2,10 +2,11 @@
 
 **Date:** 2026-10-06
 **Branch:** main
-**Phase:** C (dashboard + API) — see `PLANBOOK.md`
+**Phase:** D (Jupyter walkthrough) — see `PLANBOOK.md`
 **DB:** `pricing-scraper/data/market_data.db` (48 KB, SQLite — not committed, seeded on demand)
 **Tests:** 36 passing (`tests/test_scraper.py` — schema + idempotent seed + closed windows;
-`tests/test_dashboard.py` — 21 hermetic dashboard tests)
+`tests/test_dashboard.py` — 21 hermetic dashboard tests). The gate also executes
+`notebooks/pricing_walkthrough.ipynb` headlessly (see *Configuration*).
 
 ---
 
@@ -15,7 +16,7 @@
 |---|---|
 | Dashboard (`FastAPI` + `HTMX`) | built — `pricing-dashboard/app.py`; vendored HTMX (`static/htmx.min.js`, never a CDN); JSON API at `/api/pricing` |
 | Port | **8090**, served by this app. 8000 and 8002 are in use by other local services; 8001 is reserved and unbound here. |
-| Notebook walkthrough | not built (Phase D) |
+| Notebook walkthrough | built — `notebooks/pricing_walkthrough.ipynb`; 8 code cells, 3 matplotlib figures; executed headlessly by the gate |
 | `scripts/quick-start.sh` | not built (Phase E) |
 
 There are no systemd units, no timers and no remote host for this repo. It is a
@@ -35,7 +36,7 @@ local-only, on-demand showcase application.
 | `pricing-dashboard/helpers.py` | Plain-dict data access (no ORM); resolves `PRICING_DB_PATH` per call so tests are hermetic |
 | `pricing-dashboard/templates/` | `base.html` shell; `dashboard.html` + `comparison_fragment.html` fragments |
 | `pricing-dashboard/static/` | Vendored `htmx.min.js` (never a CDN) + `style.css` |
-| `notebooks/pricing_walkthrough.ipynb` | Analysis + charts (Phase D) |
+| `notebooks/pricing_walkthrough.ipynb` | Analysis + charts — opens SQLite directly, seeds it if absent, 3 matplotlib figures |
 | `probe_config.yaml` | Test command — single source of truth for the hook and CI |
 | `PLANBOOK.md` | Master operating state |
 
@@ -44,12 +45,40 @@ local-only, on-demand showcase application.
 - `probe_config.yaml` — empty `services`/`timers`, no `ssh` block; `tests.command`
   is the gate used by both the pre-commit hook and CI, narrowed in Phase B to
   `.venv/bin/python -m pytest tests/ -q` (the scaffold-era `[ ! -d tests ]` guard
-  is gone). CI provisions a repository-root `.venv` so the same command runs there.
+  is gone). **Phase D appended the notebook gate** to that same one command —
+  `jupyter nbconvert --to notebook --execute --stdout
+  notebooks/pricing_walkthrough.ipynb > /dev/null` — so a broken walkthrough fails
+  the commit and the build exactly like a failing test, with no CI/hook drift.
+  CI provisions a repository-root `.venv` so the same command runs there.
 - `repo_owners.yaml` (not committed) — asserts the expected GitHub owner for this
   repo so the pre-push hook catches an account-crossing push.
 - `secrets_config.yaml` — committed; default forbidden-pattern set.
 
 ## Changes This Session (2026-10-06)
+
+### Phase D — Jupyter walkthrough
+
+- **`notebooks/pricing_walkthrough.ipynb`** (new) — the analysis half of the
+  pipeline, 15 cells (8 code, 7 markdown, zero failed). It finds the repo root by
+  walking up from the kernel's working directory (notebooks have no `__file__`),
+  reuses the single `import_paths.py` bootstrap, and opens SQLite directly —
+  seeding the gitignored database from `sample_data.json` when it is absent, so a
+  fresh clone and CI both run it with no prior step. Flow: current-price view
+  (`valid_to IS NULL`) → SKU × vendor grid → per-SKU cheapest/priciest/spread →
+  coverage + price index → three matplotlib figures (grouped bars, cheapest-vs-
+  priciest, price-index heatmap) → a production-runbook section and a summary.
+  Every figure is an inline PNG; every insight is paired with a visualization.
+- **`requirements-dev.txt`** — added the notebook toolchain: `jupyter`, `matplotlib`
+  and `pandas` and their transitive closure. `requirements.txt` (runtime) is
+  **unchanged** — the split is exactly `pip freeze` minus the runtime manifest.
+- **`probe_config.yaml`** — `tests.command` now runs the pytest suite **and** the
+  notebook gate (`jupyter nbconvert --execute`) in one command, so the pre-commit
+  hook and CI enforce the notebook from a single source of truth.
+- **`.github/workflows/ci.yml`** — the shared gate now covers the notebook; the
+  step and header comments were updated to say so (still fully inlined/hermetic —
+  no new script, and the notebook seeds its own database).
+- **`01_PRICING_SCRAPER_CASE_STUDY.md`** — corrected "the four charts" to "the
+  three charts" so the draft matches the notebook it describes (finalized in E1).
 
 ### Phase C — dashboard + API
 

@@ -8,12 +8,25 @@ and `CHANGELOG.md` (dated change entries).
 
 ## Current snapshot
 
-- **Last reconciled:** 2026-10-06 (`main`). **Phases A + B + C complete**,
+- **Last reconciled:** 2026-10-06 (`main`). **Phases A + B + C + D complete**,
   committed; no `origin` remote yet, so CI is drafted but not yet exercised.
-- **Status:** Data layer **and** dashboard complete. Schema, seed JSON, idempotent
-  scraper (with a proper open/closed price window), the FastAPI + HTMX dashboard
-  on port 8090 (shell/fragment split, JSON API) and a green **36-test** suite are
-  in place. No notebook or `quick-start.sh` yet.
+- **Status:** Data layer, dashboard **and** analysis notebook complete. Schema, seed
+  JSON, idempotent scraper (with a proper open/closed price window), the FastAPI +
+  HTMX dashboard on port 8090 (shell/fragment split, JSON API), the Jupyter
+  walkthrough and a green **36-test** suite are in place, and the shared gate also
+  executes the notebook. Only `scripts/quick-start.sh` and the Phase E docs remain.
+- **Phase D complete:** `notebooks/pricing_walkthrough.ipynb` — 15 cells (8 code, 7
+  markdown, zero failed). Repo-root discovery by walking up from the kernel's cwd
+  (a notebook has no `__file__`) feeding the **same** `import_paths.py` bootstrap;
+  SQLite opened directly and **self-seeded** from `sample_data.json` when absent, so
+  a fresh clone and CI both run it with no prior step. Flow: current-price view
+  (`valid_to IS NULL`) → SKU × vendor grid → per-SKU cheapest/priciest/spread →
+  coverage + price index → three matplotlib figures (grouped bars, cheapest-vs-
+  priciest, price-index heatmap). `requirements-dev.txt` gains the pinned `jupyter`
+  + `matplotlib` + `pandas` closure; `requirements.txt` (runtime) is **untouched**
+  (the split is exactly `pip freeze` minus the runtime manifest). The notebook gate
+  is appended to `probe_config.yaml` → `tests.command`, so the pre-commit hook and
+  CI enforce it from one source of truth.
 - **Phase C complete:** `pricing-dashboard/` — `app.py` (one FastAPI app;
   `/`, `/comparison`, `/api/pricing`, `/api/pricing/{competitor}`), `helpers.py`
   (plain dicts, no ORM; `PRICING_DB_PATH` resolved per call), `templates/`
@@ -47,7 +60,7 @@ and `CHANGELOG.md` (dated change entries).
 | **A** | Scaffold + house conventions | — | ✅ complete |
 | **B** | Data layer: schema, seed JSON, idempotent scraper, tests | A | ✅ complete |
 | **C** | Dashboard + API: FastAPI, `_is_htmx()`, templates, tests | B | ✅ complete |
-| **D** | Jupyter walkthrough + notebook deps + CI notebook gate | B | ⬜ not started |
+| **D** | Jupyter walkthrough + notebook deps + CI notebook gate | B | ✅ complete |
 | **E** | Docs, `quick-start.sh`, publish, tag `v1.0.0` | C + D | ⬜ not started |
 
 Step-level build notes and per-phase verification are maintained by the repo
@@ -83,6 +96,8 @@ Live scraping of real vendor sites, any database server, authentication, Docker,
 deployment infrastructure, and a React implementation.
 
 ## Revision history
+
+- 2026-10-06: **Phase D — Jupyter walkthrough landed** — added `notebooks/pricing_walkthrough.ipynb` (15 cells: 8 code, 7 markdown, zero failed). It locates the repo root by walking up from the kernel's working directory — a notebook has no `__file__`, so this is how it finds the repo without hard-coding a path — and then reuses the **one** `import_paths.py` bootstrap so `schema`/`scraper` import by name, exactly as the tests and app do. It opens `market_data.db` directly and **calls `seed_from_json()` when the database is absent**, so a fresh clone and CI run it with no prior step; the write is idempotent. The analysis: the `valid_to IS NULL` current-price view (19 rows) → a SKU × vendor pivot ordered small→large → a per-SKU reduction (cheapest/priciest vendor, absolute and relative spread) → the price index vs. cheapest plus a coverage count, which surfaces Hetzner's missing `nano` plan as a gap rather than a win. Three matplotlib figures, each inline and paired with its insight: a grouped bar by plan, a cheapest-vs-priciest bar, and a price-index heatmap. `requirements-dev.txt` gained the notebook closure (`jupyter`, `matplotlib`, `pandas` + transitive deps, pinned from the same `pip freeze`); `requirements.txt` is **unchanged** — the split is exactly the freeze minus the runtime manifest. The notebook gate (`jupyter nbconvert --to notebook --execute --stdout …`) was **appended to `probe_config.yaml` → `tests.command`** so the local pre-commit hook and CI share one gate and cannot drift; `.github/workflows/ci.yml`'s step/comment were updated to say so (still inlined and hermetic — the notebook seeds its own database). Also corrected the case study's "four charts" to "three charts" to match. Verified: full gate run (`.venv/bin/python -m pytest tests/ -q && jupyter nbconvert --execute …`) exits 0 — 36 tests green, notebook executes with **0** `output_type: error` cells; with `market_data.db` moved aside the notebook still exits 0 and **self-seeds 4/5/19/1**; a deliberately broken notebook makes the same gate exit **1** with `CellExecutionError` on stderr.
 
 - 2026-10-06: **Phase C — dashboard + API landed** — added `pricing-dashboard/`: `app.py` (one FastAPI app with an `APIRouter` for `/`, `/comparison`, `/api/pricing`, `/api/pricing/{competitor}`; `StaticFiles` mounted at `/static` and the router included, mirroring the reference wiring), `helpers.py` (plain-dict data access, no ORM; reuses `schema.connect()`; "current price" is a simple `valid_to IS NULL` filter; the DB path is resolved per call from `PRICING_DB_PATH` so tests never touch the gitignored artifact), `templates/` (`base.html` shell with nav, vendored HTMX, `hx-target="#main"`, `hx-push-url="true"` and the load-bearing footer disclaimer; `dashboard.html` grid and `comparison_fragment.html` search as content-only fragments) and `static/` (the vendored `htmx.min.js` — never a CDN — plus a hand-written `style.css`). `_is_htmx()` gates **every** view route. The bootstrap's sketch corrections are applied: the search input carries `name="products"` and the route tolerates empty input, and a legitimate `0.0` price renders as `$0.00` via an explicit `is none` check rather than the missing-value dash. `tests/test_dashboard.py` adds **21** tests (13 → 36 total): parameterized fragment-versus-shell coverage for both view routes, JSON-versus-HTML separation, the empty-search cases and the zero-price regression; `tests/conftest.py` loads the hyphenated app by file path and provides a `client` fixture over a throwaway seeded DB. Dependency pins frozen from `.venv/bin/pip freeze` and split so `requirements.txt` stays runtime-only. Verified: 36 tests green — including with `pricing-scraper/data/market_data.db` deleted; scraper run twice → counts unchanged (4/5/19/1); the app bound on 8090 returns no `<html>` under `HX-Request: true` and the full shell without it, while `/api/pricing` returns JSON; 8090 owned by this app, 8000/8002 untouched.
 

@@ -25,15 +25,21 @@ timers: []
 databases:
   - path: pricing-scraper/data/market_data.db
 
-# Hermetic unit tests (tests/), run with the repo venv — the same interpreter and
-# command locally and in CI. CI provisions a root `.venv` before reading this
-# command (see .github/workflows/ci.yml), so the single command below works in
-# both places and the pre-commit hook and CI cannot drift apart.
+# Hermetic unit tests (tests/) followed by a headless run of the analysis
+# notebook, executed with the repo venv — the same interpreter and command
+# locally and in CI. CI provisions a root `.venv` before reading this command
+# (see .github/workflows/ci.yml), so the single command below works in both
+# places and the pre-commit hook and CI cannot drift apart.
 #
 # Phase B narrowed this from the scaffold-era `[ ! -d tests ]` guard now that
-# tests/ exists.
+# tests/ exists. Phase D appended the notebook gate: `nbconvert --execute`
+# re-runs every cell from a clean kernel and exits non-zero on the first error,
+# so a broken walkthrough blocks the commit and the build exactly like a failing
+# test. The executed notebook itself is written to stdout and discarded — a cell
+# failure is reported on stderr, which stays visible in both gates. The notebook
+# seeds the gitignored database if it is absent, so the gate needs no prior step.
 tests:
-  command: ".venv/bin/python -m pytest tests/ -q"
+  command: ".venv/bin/python -m pytest tests/ -q && .venv/bin/jupyter nbconvert --to notebook --execute --stdout notebooks/pricing_walkthrough.ipynb > /dev/null"
 
 snapshot:
   path: SYSTEM_SNAPSHOT.md

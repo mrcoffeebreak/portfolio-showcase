@@ -13,9 +13,12 @@
 #
 # Lint and type-check are omitted because nothing here configures them (no
 # ruff/mypy config, no .pre-commit-config.yaml, no `make lint`). Snapshot refresh
-# is skipped: it is meaningless on a runner. The test suite is driven by
+# is skipped: it is meaningless on a runner. The gate is driven by
 # probe_config.yaml → tests.command, the same single source of truth the local
-# pre-commit hook uses.
+# pre-commit hook uses: the hermetic pytest suite followed by a headless
+# `jupyter nbconvert --execute` of the analysis notebook, so a broken notebook
+# fails the build exactly like a failing test. The notebook seeds the gitignored
+# database itself, so no extra provisioning step is needed here.
 name: CI
 
 on:
@@ -47,7 +50,7 @@ jobs:
         # pre-commit hook's local schema validation).
         run: .venv/bin/python -c "import yaml; yaml.safe_load(open('probe_config.yaml'))"
 
-      - name: Run hermetic tests (per probe_config.yaml tests.command)
+      - name: Run the gate — tests + notebook (per probe_config.yaml tests.command)
         run: |
           TEST_CMD="$(.venv/bin/python -c "import yaml; print(yaml.safe_load(open('probe_config.yaml'))['tests']['command'])")"
           if [ -z "$TEST_CMD" ]; then
