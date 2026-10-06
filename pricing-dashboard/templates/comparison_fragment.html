@@ -1,0 +1,78 @@
+{# Search view — the search form plus a results region.
+   Used two ways:
+     * as the fragment swapped into #main when the nav link is clicked;
+     * on its own, re-fetched by the form on input.
+   The form uses `hx-select="#comparison-results"` + `hx-target="#comparison-results"`
+   so a keystroke swaps only the results region: the input keeps focus, and the
+   same fragment serves both the full-view swap and the results-only swap.
+   The input carries name="products" — without it the route's `products` query
+   parameter would never bind. #}
+<section class="view view-comparison">
+  <header class="view-header">
+    <h2 class="view-title">Search products</h2>
+    <p class="view-note">
+      Type a SKU, size or category (comma- or space-separated). Matching is
+      case-insensitive and every term must match. An empty search shows every
+      product.
+    </p>
+  </header>
+
+  <form class="search-form"
+        hx-get="/comparison"
+        hx-target="#comparison-results"
+        hx-select="#comparison-results"
+        hx-swap="innerHTML"
+        hx-trigger="input changed delay:200ms from:#products-input, submit">
+    <label class="search-label" for="products-input">Products</label>
+    <input id="products-input"
+           class="search-input"
+           type="search"
+           name="products"
+           value="{{ query }}"
+           placeholder="e.g. 2 vCPU, shared, medium"
+           autocomplete="off">
+    <button type="submit" class="search-button">Search</button>
+  </form>
+
+  <div id="comparison-results" aria-live="polite">
+    {% if rows %}
+    <p class="results-count">
+      {{ rows|length }} product{{ "" if rows|length == 1 else "s" }} matched{% if query %} “{{ query }}”{% endif %}.
+    </p>
+    <div class="table-wrap">
+      <table class="pricing-grid">
+        <thead>
+          <tr>
+            <th scope="col" class="col-product">Product</th>
+            {% for comp in competitors %}
+            <th scope="col">{{ comp.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <th scope="row" class="product-cell">
+              <span class="product-name">{{ row.product.name }}</span>
+              <span class="product-sku">{{ row.product.sku }}</span>
+            </th>
+            {% for comp in competitors %}
+            {% set price = row.prices[comp.name] %}
+            <td class="price">
+              {% if price is none %}
+                <span class="price-missing" title="not offered">&mdash;</span>
+              {% else %}
+                ${{ "%.2f"|format(price) }}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="empty-state">No products matched “{{ query }}”.</p>
+    {% endif %}
+  </div>
+</section>

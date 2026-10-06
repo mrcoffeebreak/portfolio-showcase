@@ -1,11 +1,27 @@
 # Development / test-only dependencies — portfolio-showcase
 #
-# CI installs both requirements.txt and this file, then runs the command from
-# probe_config.yaml → tests.command, so a broken test suite or notebook fails
-# the build.
+# Installed alongside the runtime manifest — CI runs both, then the command from
+# probe_config.yaml → tests.command, so a broken test suite (or, from Phase D, a
+# broken notebook) fails the build.
 #
 # Notebook and charting deps live here, not in requirements.txt, so the runtime
 # manifest stays lean. Phase D adds `jupyter` and `matplotlib`.
+#
+# Pinned from the same `.venv/bin/pip freeze` as requirements.txt, split out so
+# the runtime manifest keeps only what the app needs to serve requests:
+#   - pytest + its deps  → the hermetic suite in tests/
+#   - httpx              → the FastAPI/Starlette TestClient transport
+#   - beautifulsoup4     → structured HTML assertions in tests/test_dashboard.py
+#   - PyYAML             → CI validates probe_config.yaml with `import yaml`
 
-pytest
-pyyaml
+beautifulsoup4==4.15.0
+certifi==2026.7.22
+httpcore==1.0.9
+httpx==0.28.1
+iniconfig==2.3.0
+packaging==26.3
+pluggy==1.6.0
+Pygments==2.21.0
+pytest==9.1.1
+PyYAML==6.0.3
+soupsieve==2.10

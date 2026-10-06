@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    Competitor Pricing{% if active_view and active_view != "dashboard" %} — {{ active_view|replace("_", " ")|title }}{% endif %}
+  </title>
+  {# HTMX is vendored at /static/htmx.min.js — never a CDN. #}
+  <script src="/static/htmx.min.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23111827'/%3E%3Ctext x='16' y='22' font-size='18' text-anchor='middle' fill='%2338bdf8' font-family='monospace'%3E%24%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <div class="app-container">
+
+    {# ── Header + navigation ── #}
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">$</span>
+        <div class="brand-text">
+          <h1 class="brand-title">Competitor Pricing</h1>
+          <p class="brand-subtitle">illustrative data &middot; data_as_of {{ data_as_of }}</p>
+        </div>
+      </div>
+
+      <nav class="nav-bar" aria-label="Primary">
+        <a href="/"
+           class="nav-link{% if active_view == 'dashboard' %} active{% endif %}"
+           hx-get="/"
+           hx-target="#main"
+           hx-push-url="true">
+          Grid
+        </a>
+        <a href="/comparison"
+           class="nav-link{% if active_view == 'comparison' %} active{% endif %}"
+           hx-get="/comparison"
+           hx-target="#main"
+           hx-push-url="true">
+          Search
+        </a>
+      </nav>
+    </header>
+
+    {# ── Main content: the swap target for every view route ── #}
+    <main id="main">
+      {% if active_view == "comparison" %}
+        {% include "comparison_fragment.html" %}
+      {% else %}
+        {% include "dashboard.html" %}
+      {% endif %}
+    </main>
+
+    {# ── Footer: the load-bearing disclaimer ── #}
+    <footer class="site-footer">
+      <p class="footer-disclaimer">{{ disclaimer }}</p>
+      <p class="footer-meta">
+        data_as_of: {{ data_as_of }} &middot; illustrative &middot; not affiliated with any vendor
+        {%- if snapshot %} &middot; {{ snapshot.row_count }} price rows from <code>{{ snapshot.source_file }}</code>{% endif %}
+      </p>
+    </footer>
+
+  </div>
+</body>
+</html>

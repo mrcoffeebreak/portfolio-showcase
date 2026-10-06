@@ -6,6 +6,48 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Added
 
+- **dashboard:** `pricing-dashboard/app.py` — one FastAPI app with an `APIRouter`
+  exposing `/` (comparison grid), `/comparison` (search view),
+  `/api/pricing` (all current prices as JSON) and `/api/pricing/{competitor}`
+  (filtered JSON). `StaticFiles` is mounted at `/static` and the router is
+  included, mirroring the established wiring. `_is_htmx(request)` gates **every**
+  view route: `HX-Request: true` returns a content-only fragment, a direct load
+  returns the full `base.html` shell — without the split an HTMX swap nests a
+  whole document inside `#main` and duplicates the navigation. The hyphenated
+  directory means the app is served with `--app-dir` (or loaded by file path in
+  tests), and the module reuses the repo's single `import_paths.py` bootstrap.
+  Port **8090**.
+- **dashboard:** `pricing-dashboard/helpers.py` — plain-dict data access, no ORM.
+  Reuses `schema.connect()` and reads "current price" as a simple
+  `valid_to IS NULL` filter (Phase B's ruling #10 invariant). The database path
+  is resolved **per call** from `PRICING_DB_PATH`, defaulting to the
+  repo-relative `pricing-scraper/data/market_data.db`, so the test suite can point
+  the app at a throwaway database without reloading modules. A missing database
+  degrades to an empty state rather than an error.
+- **dashboard:** `pricing-dashboard/templates/base.html` — the shell: nav links
+  with `hx-get` / `hx-target="#main"` / `hx-push-url="true"`, the vendored HTMX
+  script, and the **load-bearing footer disclaimer** (illustrative, not
+  affiliated, `data_as_of: 2026-10-01`).
+- **dashboard:** `pricing-dashboard/templates/dashboard.html` +
+  `templates/comparison_fragment.html` — the comparison grid and the search view,
+  rendered both inside the shell and standalone as HTMX fragments. The sketch
+  corrections are applied: the search input carries `name="products"` (without it
+  the route's query parameter never binds) and the route tolerates empty input;
+  and a legitimate `0.0` price renders as `$0.00` through an explicit `is none`
+  check, so the missing-value dash is reserved for a genuinely absent price.
+- **dashboard:** `pricing-dashboard/static/htmx.min.js` — the vendored MIT asset
+  (~48 KB), copied into the repo; **never** a CDN. `static/style.css` — a
+  hand-written, dark, table-first stylesheet with no build step.
+- **tests:** `tests/test_dashboard.py` — **21** hermetic dashboard tests (15 → 36
+  in total): parameterized fragment-versus-shell coverage for both view routes
+  (no shell markers under `HX-Request: true`; the full shell without it), the
+  HTMX nav attributes and vendored-asset check, JSON-versus-HTML separation, the
+  empty-search cases (`products=""`, missing and whitespace-only), and the
+  zero-price-not-a-dash regression. `tests/conftest.py` loads the hyphenated
+  `pricing-dashboard/app.py` by file path and adds a `client` fixture that seeds a
+  throwaway database from the committed `sample_data.json` and points the app at
+  it via `PRICING_DB_PATH` — so the suite passes with the gitignored
+  `market_data.db` deleted, exactly as CI needs.
 - **tooling:** `import_paths.py` — the single documented, `__file__`-relative
   `sys.path` bootstrap for the hyphenated `pricing-scraper/` directory. Resolved
   from the module's own `__file__` (never the working directory), it is shared by
@@ -58,6 +100,12 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Changed
 
+- **deps:** `requirements.txt` and `requirements-dev.txt` are now **pinned** from a
+  single `.venv/bin/pip freeze` and split so the runtime manifest stays lean.
+  `requirements.txt` carries the pinned closure of `fastapi` + `uvicorn` + `jinja2`
+  (HTMX is vendored, so it is deliberately absent); `requirements-dev.txt` carries
+  `pytest`, `httpx`, `beautifulsoup4`, `PyYAML` and their transitive deps. CI
+  installs both, so the versions frozen here are the versions that run.
 - **data:** `seed_from_json` now **closes the prior price window at ingest**. Before
   a newer observation is written, the earlier open row's `valid_to` is set to the
   new `valid_from`, so exactly one row per `(competitor, product)` keeps
@@ -89,8 +137,8 @@ All notable changes to this repo are documented here. Newest first.
 - **The seeded SQLite artifact is deliberately not committed.** `sample_data.json` is
   the committed source of truth and `scripts/quick-start.sh` will seed the database on
   demand, so a fresh clone exercises the real pipeline instead of trusting a binary.
-- **Port 8090** reserved for the dashboard. 8000 and 8002 are in use by other local
-  services; 8001 is reserved and unbound here.
+- **Port 8090** is the dashboard's port, served by this app. 8000 and 8002 are in
+  use by other local services; 8001 is reserved and unbound here.
 - **Vendored HTMX**, never a CDN. Charts belong to the notebook, not the dashboard.
 
 ### Fixed

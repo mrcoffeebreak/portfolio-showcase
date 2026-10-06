@@ -1,0 +1,66 @@
+{# Comparison grid — one row per product, one column per competitor.
+   Rendered both inside #main (via base.html) and on its own as the HTMX
+   fragment, so it must never contain shell markup. #}
+<section class="view view-dashboard">
+  <header class="view-header">
+    <h2 class="view-title">Price comparison grid</h2>
+    <p class="view-note">
+      Current price per product. A dash means the vendor does not offer that SKU
+      in the seed data; a real price of <code>$0.00</code> is shown as
+      <code>$0.00</code>.
+    </p>
+  </header>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="pricing-grid">
+      <thead>
+        <tr>
+          <th scope="col" class="col-product">Product</th>
+          {% for comp in competitors %}
+          <th scope="col">
+            {% if comp.website %}
+              <a href="{{ comp.website }}" target="_blank" rel="noopener noreferrer">{{ comp.name }}</a>
+            {% else %}{{ comp.name }}{% endif %}
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <th scope="row" class="product-cell">
+            <span class="product-name">{{ row.product.name }}</span>
+            <span class="product-sku">{{ row.product.sku }}</span>
+          </th>
+          {% for comp in competitors %}
+          {# Explicit `is none` check: `or '—'` would swallow a legitimate 0.0. #}
+          {% set price = row.prices[comp.name] %}
+          <td class="price">
+            {% if price is none %}
+              <span class="price-missing" title="not offered">&mdash;</span>
+            {% else %}
+              ${{ "%.2f"|format(price) }}
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">
+    No data yet. Seed the database from
+    <code>pricing-scraper/sample_data.json</code> and reload.
+  </p>
+  {% endif %}
+
+  {% if snapshot %}
+  <p class="snapshot-note">
+    Snapshot <strong>{{ snapshot.snapshot_date }}</strong> &middot;
+    {{ snapshot.row_count }} price rows &middot;
+    source <code>{{ snapshot.source_file }}</code>
+  </p>
+  {% endif %}
+</section>
