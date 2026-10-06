@@ -1,0 +1,13 @@
+# Runtime dependencies — portfolio-showcase
+#
+# House rule: install ONLY via `.venv/bin/pip`, then re-freeze this file with
+#   .venv/bin/pip freeze > requirements.txt
+# Phase C (dashboard) is the phase that introduces these; keep this file lean and
+# leave notebook/analysis tooling to requirements-dev.txt (Decision 2).
+#
+# Unpinned at scaffold time on purpose — Phase C installs and then freezes, so the
+# pins reflect the versions that actually ran the test suite rather than guesses.
+
+fastapi
+uvicorn
+jinja2

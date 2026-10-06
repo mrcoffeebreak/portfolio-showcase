@@ -1,0 +1,11 @@
+# Development / test-only dependencies — portfolio-showcase
+#
+# CI installs both requirements.txt and this file, then runs the command from
+# probe_config.yaml → tests.command, so a broken test suite or notebook fails
+# the build.
+#
+# Decision 2: notebook and charting deps live here, not in requirements.txt, so
+# the runtime manifest stays lean. Phase D adds `jupyter` and `matplotlib`.
+
+pytest
+pyyaml

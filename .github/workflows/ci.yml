@@ -1,0 +1,55 @@
+# CI — hermetic validation only.
+#
+# Modelled on algo-trader/.github/workflows/ci.yml, with every step INLINED.
+#
+# History worth not repeating: algo-trader's workflow used to delegate to
+# ./scripts/git-hooks/dev-tools/ci.sh. That path is gitignored (see .gitignore:
+# scripts/git-hooks/dev-tools/) and therefore absent from a GitHub checkout, so
+# every push exited 127 for commits 486628f..d98c4ce. Do NOT reintroduce a CI
+# dependency on a script that is not in this repo.
+#
+# What dev-tools' ci.sh would have done here, and why it is absent: lint and
+# type-check are auto-skips (no [tool.ruff] in pyproject.toml, no
+# .pre-commit-config.yaml, no `make lint`, no mypy config), snapshot refresh is
+# impossible on a runner (and unnecessary — there is no remote host to probe),
+# and the test suite is driven from probe_config.yaml, which is the same single
+# source of truth the local pre-commit hook uses.
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Validate probe_config.yaml
+        # Fail fast with a clear YAML error before the read below (mirrors the
+        # pre-commit hook's local schema validation).
+        run: python3 -c "import yaml; yaml.safe_load(open('probe_config.yaml'))"
+
+      - name: Run hermetic tests (per probe_config.yaml tests.command)
+        run: |
+          TEST_CMD="$(python3 -c "import yaml; print(yaml.safe_load(open('probe_config.yaml'))['tests']['command'])")"
+          if [ -z "$TEST_CMD" ]; then
+            echo "❌ probe_config.yaml → tests.command is empty or missing"
+            exit 1
+          fi
+          echo "Running: $TEST_CMD"
+          bash -c "$TEST_CMD"
