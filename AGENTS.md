@@ -20,8 +20,8 @@ It is **not** connected to any vendor. All pricing is illustrative and fixed at
 4. **Smoke-check the app** if the dashboard has been built:
    `./scripts/quick-start.sh`, then load `http://127.0.0.1:8090/`.
 
-There is **no remote host**. Do not probe the NUC, do not SSH anywhere — this
-repo runs entirely on the Dev Box.
+There is **no remote host**. Do not probe or SSH anywhere — this repo runs
+entirely on the local machine.
 
 ## End-of-Session Ritual
 
@@ -29,9 +29,9 @@ repo runs entirely on the Dev Box.
 2. **Run tests** to confirm nothing broke.
 3. **Commit and document** (`PLANBOOK.md` / `CHANGELOG.md`) before ending.
 
-The `pre-commit` hook (installed via `dev-tools/install.sh`) does 2 and 3
-partially for you: it refreshes the snapshot date and **blocks the commit if the
-test command in `probe_config.yaml` fails**.
+The repo's local `pre-commit` hook does 2 and 3 partially for you: it refreshes
+the snapshot date and **blocks the commit if the test command in
+`probe_config.yaml` fails**.
 
 ## Key Architecture
 
@@ -42,7 +42,7 @@ test command in `probe_config.yaml` fails**.
 | Data | SQLite at `pricing-scraper/data/market_data.db`, **seeded, not committed** |
 | Seed source | `pricing-scraper/sample_data.json` (this is the source of truth) |
 | Analysis | `notebooks/pricing_walkthrough.ipynb` — charts live here, not in the dashboard |
-| Ports taken | 8000 (`ai-platform-api`) and 8002 (`ai-platform-api-linda`) on the Dev Box. 8001 is reserved for `algo-trader-api-v2`, a **NUC** service. Use **8090** (free on both hosts). |
+| Ports taken | 8000 and 8002 are in use by other local services; 8001 is reserved. Use **8090**. |
 
 ## Change Policy
 
@@ -53,21 +53,24 @@ test command in `probe_config.yaml` fails**.
 - **Never add live scraping** of real vendor sites, real API keys, auth, a DB
   server, Docker, or deployment infrastructure. Those are explicit non-goals.
 - **`_is_htmx()` is mandatory on every view route.** Returning a full shell to an
-  HTMX swap duplicates the nav; this is the exact bug `algo-trader` fixed in
-  `bf506a7`. Do not regress it.
+  HTMX swap nests a whole document inside the swap target and duplicates the nav.
+  This is a well-known pitfall of server-rendered HTMX, not a hypothetical one.
 - **Deps:** `.venv/bin/pip` only — never global pip. Then re-freeze
   `requirements.txt`. Notebook/charting deps go in `requirements-dev.txt`.
-- **CI must stay hermetic and inlined.** Never reference
-  `scripts/git-hooks/dev-tools/ci.sh` from CI — that path is gitignored and absent
-  from a GitHub checkout (see the `algo-trader` CI incident).
+- **CI must stay hermetic and inlined.** Never point a CI step at a script that
+  lives in a gitignored directory — it will be absent from a GitHub checkout, so
+  the job fails with exit 127 while passing locally.
+- **Published files must stand alone.** This repo is public. Never reference
+  private repositories, internal hostnames, filesystem paths outside this repo,
+  other GitHub accounts, or commit hashes from other projects. When a design idea
+  came from elsewhere, describe the *idea*, not where it came from — a reader
+  cannot follow the reference anyway.
 
-## Cross-Repo Context
+## Conventions
 
-This repo is a standalone public artifact. The private homelab repos that share
-its conventions live alongside it under `~/projects/`; see `~/projects/AGENTS.md`
-for the index. The reference implementation for the dashboard patterns is
-`algo-trader` (`scripts/dashboard_routes.py`, `templates/base.html`,
-`tests/test_dashboard.py`).
+This is a standalone public artifact. The patterns it follows — `_is_htmx()`
+shell-versus-fragment routing, a vendored HTMX asset, and fragment-versus-shell
+tests — are reproduced here in full so the repo stands on its own.
 
 ## Working-Session Efficiency
 

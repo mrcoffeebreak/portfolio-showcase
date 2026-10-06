@@ -1,5 +1,3 @@
-# Modelled on algo-trader/.gitignore + ai-platform/.gitignore.
-
 # --- Python ---
 __pycache__/
 *.py[cod]
@@ -19,20 +17,17 @@ venv/
 # --- Runtime output ---
 logs/
 
-# --- dev-tools (also appended by dev-tools/install.sh; declared here so a fresh
-#     clone that has not run install.sh still ignores them) ---
+# --- Local git hooks (developer convenience; not published) ---
 scripts/git-hooks/dev-tools/
 .dev-tools-version
 repo_owners.yaml
 
 # --- Seeded SQLite database ---
-# DECISION 1: the seeded `.db` is NOT committed. `scripts/quick-start.sh` seeds it
-# when absent, so a clone proves the scrapers/pipeline actually run (init_db →
-# seed_from_json) rather than trusting a committed binary, and diffs stay readable.
-# Matched at any depth: the artifact lives at pricing-scraper/data/market_data.db.
-# NOTE: the plan's step A2 wording ("do NOT ignore `data/*.db`") contradicts
-# Decision 1; Decision 1 is the numbered, rationale-backed decision, so this file
-# ignores the artifact and `sample_data.json` — the real source of truth — is
-# committed instead.
+# The generated database is deliberately NOT committed. `scripts/quick-start.sh`
+# creates and seeds it when it is absent, so a clone proves the pipeline actually
+# runs (init_db → seed_from_json) rather than trusting a committed binary, and
+# diffs stay readable. `sample_data.json` — the real source of truth — IS
+# committed. Matched at any depth: the artifact lives at
+# pricing-scraper/data/market_data.db.
 **/data/*.db
 **/data/*.sqlite

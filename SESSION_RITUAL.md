@@ -1,7 +1,7 @@
 # Session Ritual — portfolio-showcase
 
-Adapted from `algo-trader/SESSION_RITUAL.md`, minus everything NUC-shaped. There
-is **no remote host** for this repo: no SSH, no systemd, no probing.
+There is **no remote host** for this repo: no SSH, no systemd, no probing.
+Everything runs on the local machine.
 
 ## 1. Read the Snapshot
 
@@ -12,7 +12,7 @@ cat SYSTEM_SNAPSHOT.md
 ## 2. Run the Tests
 
 ```bash
-cd ~/projects/portfolio-showcase
+cd "$(git rev-parse --show-toplevel)"
 .venv/bin/python -m pytest tests/ -q
 ```
 
@@ -54,14 +54,12 @@ The second command is the fragment check — a fragment must never carry the she
 
 ## Ports
 
-| Port | Owner | Host | Bound on the Dev Box? |
-|---|---|---|---|
-| 8000 | `ai-platform-api` | Dev Box | ✅ yes |
-| 8001 | `algo-trader-api-v2` | **NUC** (Dev Box reaches it via an SSH tunnel) | ✖ no |
-| 8002 | `ai-platform-api-linda` | Dev Box | ✅ yes |
-| **8090** | **this repo** | Dev Box | reserved — verify it is free before starting |
-
-Canonical registry: `ai-platform/SYSTEM_SNAPSHOT.md` → *Port Allocations*.
+| Port | Bound here? | Notes |
+|---|---|---|
+| 8000 | ✅ yes | another local service |
+| 8001 | ✖ no | reserved for a service that runs on a different host |
+| 8002 | ✅ yes | another local service |
+| **8090** | free | **this repo** — verify it is free before starting |
 
 Check before binding anything:
 
@@ -69,8 +67,7 @@ Check before binding anything:
 ss -ltnp | grep -E ':(8000|8001|8002|8090)'
 ```
 
-Only 8090 should belong to this repo. 8000 and 8002 are ai-platform (default and
-Linda); 8001 is a NUC port and should be **absent** here.
+Only 8090 should belong to this repo.
 
 > Do **not** bind anything else on 8090, and do not "borrow" 8001 just because it
-> is free on this box — that port is reserved for `algo-trader-api-v2`.
+> is free here — that port is reserved elsewhere.

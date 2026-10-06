@@ -120,9 +120,10 @@ safe, and the property the test suite asserts directly.
 Every view route returns *either* a full page or a bare fragment, depending on
 whether the request carries the `HX-Request` header. Without this split, an HTMX
 navigation click swaps a complete HTML document into the content region and the
-nav renders twice. This is a real bug that was hit and fixed in a sibling project
-(`algo-trader`, commit `bf506a7`); this project reuses the fix
-(`_is_htmx()`) rather than rediscovering it.
+nav renders twice. This is a real pitfall of server-rendered HTMX, not a
+hypothetical one — it is the kind of bug that survives review because the page
+looks right until a user clicks a nav link. This project handles it up front with
+explicit `_is_htmx()` routing rather than rediscovering it in production.
 
 ## 5. How It Works
 

@@ -7,17 +7,17 @@ All notable changes to this repo are documented here. Newest first.
 ### Added
 
 - **repo:** Initial scaffold — `git init -b main`, MIT `LICENSE`, `README.md` stub
-  (landing page is finalized in Phase E), `.gitignore` modelled on the `algo-trader`
-  and `ai-platform` repos, and the `.github/` prompt mirror.
-- **tooling:** `dev-tools` hooks installed and pinned at **v0.2.2 (557b0fa)** —
-  `scripts/git-hooks/{pre-commit,pre-push,post-checkout}` symlinked into
-  `scripts/git-hooks/dev-tools/`, `core.hooksPath` set, starter `secrets_config.yaml`
-  and `repo_owners.yaml` seeded.
+  (landing page is finalized in Phase E), `.gitignore`, and the `.github/` prompt
+  mirror.
+- **tooling:** local git hooks installed and pinned at **v0.2.2** —
+  `scripts/git-hooks/{pre-commit,pre-push,post-checkout}`, `core.hooksPath` set,
+  starter `secrets_config.yaml` and `repo_owners.yaml` seeded. The hook bundle
+  itself is not published.
 - **ci:** `.github/workflows/ci.yml` drafted with **inlined, hermetic** steps: it
   installs both manifests, validates `probe_config.yaml`, and runs the test command
   from `probe_config.yaml` → `tests.command` (the same single source of truth the
-  pre-commit hook uses). It never references the gitignored
-  `scripts/git-hooks/dev-tools/ci.sh`.
+  pre-commit hook uses). No step depends on a local helper script, which would be
+  absent from a GitHub checkout.
 - **deps:** `requirements.txt` (runtime) and `requirements-dev.txt` (test/analysis),
   to be frozen with `.venv/bin/pip freeze` once Phase C installs.
 - **docs:** house doc set — `AGENTS.md` ⇄ `.github/copilot-instructions.md` (mirror
@@ -28,30 +28,33 @@ All notable changes to this repo are documented here. Newest first.
 
 ### Changed
 
-- **config:** `probe_config.yaml` trimmed for a NUC-less repo — no `ssh` block, empty
-  `services`/`timers`, no inert `ports:`/`cron:` keys, and the test command set to the
-  venv-first form used by both the hook and CI.
-- **config:** `repo_owners.yaml` asserts `portfolio-showcase: mrcoffeebreak` so the
-  pre-push hook catches an account-crossing push (the repo is intended to be public).
+- **config:** `probe_config.yaml` trimmed for a single-machine app — no `ssh` block,
+  empty `services`/`timers`, no inert `ports:`/`cron:` keys, and the test command set
+  to the venv-first form used by both the hook and CI.
+- **config:** `repo_owners.yaml` asserts the expected GitHub owner for this repo so
+  the pre-push hook catches an account-crossing push (it is intended to be public).
 
 ### Decisions
 
 - **The seeded SQLite artifact is deliberately not committed.** `sample_data.json` is
   the committed source of truth and `scripts/quick-start.sh` will seed the database on
   demand, so a fresh clone exercises the real pipeline instead of trusting a binary.
-- **Port 8090** reserved for the dashboard. Owned by others: 8000 (`ai-platform-api`)
-  and 8002 (`ai-platform-api-linda`) on the Dev Box, plus 8001 which belongs to
-  `algo-trader-api-v2` on the NUC (nothing binds it on the Dev Box).
+- **Port 8090** reserved for the dashboard. 8000 and 8002 are in use by other local
+  services; 8001 is reserved and unbound here.
 - **Vendored HTMX**, never a CDN. Charts belong to the notebook, not the dashboard.
 
 ### Fixed
 
-- **docs:** Corrected port ownership. The earlier wording claimed 8000 *and 8001* were
-  bound on the Dev Box; the verified state is that the Dev Box binds **8000**
-  (`ai-platform-api`) and **8002** (`ai-platform-api-linda`), while **8001** is reserved
-  for `algo-trader-api-v2` on the **NUC** and is not bound here. `SESSION_RITUAL.md` now
-  carries a port table plus the check command
+- **docs:** Corrected port ownership, and removed private context. The earlier wording
+  claimed 8000 *and* 8001 were both in use locally; the verified state is that **8000
+  and 8002** are in use and **8001** is unbound here (reserved elsewhere).
+  `SESSION_RITUAL.md` now carries a port table plus the check command
   `ss -ltnp | grep -E ':(8000|8001|8002|8090)'`.
+- **docs:** Every published file was rewritten to stand alone — references to private
+  sibling repositories, internal hostnames and plan-internal step labels were replaced
+  with self-contained wording, since this repo is intended to be public. No behavioural
+  change: the operative rules (vendored HTMX, `_is_htmx()` on every view route, port
+  8090, `.venv`-only installs, inlined CI) are unchanged.
 
 ### Known gaps
 

@@ -1,19 +1,16 @@
 # CI — hermetic validation only.
 #
-# Modelled on algo-trader/.github/workflows/ci.yml, with every step INLINED.
+# Every step is INLINED on purpose: a CI job must never depend on a script that
+# lives in a gitignored directory. Gitignored paths are absent from a GitHub
+# checkout, so such a job fails (exit 127) on every push while passing locally.
+# The local git hooks are a developer convenience and are deliberately not part
+# of CI.
 #
-# History worth not repeating: algo-trader's workflow used to delegate to
-# ./scripts/git-hooks/dev-tools/ci.sh. That path is gitignored (see .gitignore:
-# scripts/git-hooks/dev-tools/) and therefore absent from a GitHub checkout, so
-# every push exited 127 for commits 486628f..d98c4ce. Do NOT reintroduce a CI
-# dependency on a script that is not in this repo.
-#
-# What dev-tools' ci.sh would have done here, and why it is absent: lint and
-# type-check are auto-skips (no [tool.ruff] in pyproject.toml, no
-# .pre-commit-config.yaml, no `make lint`, no mypy config), snapshot refresh is
-# impossible on a runner (and unnecessary — there is no remote host to probe),
-# and the test suite is driven from probe_config.yaml, which is the same single
-# source of truth the local pre-commit hook uses.
+# Lint and type-check are omitted because nothing here configures them (no
+# ruff/mypy config, no .pre-commit-config.yaml, no `make lint`). Snapshot refresh
+# is skipped: it is meaningless on a runner. The test suite is driven by
+# probe_config.yaml → tests.command, the same single source of truth the local
+# pre-commit hook uses, so local and CI cannot drift.
 name: CI
 
 on:
