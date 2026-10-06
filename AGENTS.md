@@ -12,7 +12,9 @@ It is **not** connected to any vendor. All pricing is illustrative and fixed at
 
 ## Session Start Ritual
 
-1. **Read `SYSTEM_SNAPSHOT.md`** and `SESSION_RITUAL.md` from this repo.
+1. **Read `SYSTEM_SNAPSHOT.md`, `SESSION_RITUAL.md` and `PLANBOOK.md`** from this
+   repo. `PLANBOOK.md` → *Build plan* is the phase index and records what is done
+   and what comes next; `SYSTEM_SNAPSHOT.md` is the live state.
 2. **Run the tests:** `.venv/bin/python -m pytest tests/ -q`.
 3. **Report drift** against `SYSTEM_SNAPSHOT.md` (row counts, port, test count).
 4. **Smoke-check the app** if the dashboard has been built:
