@@ -13,7 +13,7 @@
 | Piece | State |
 |---|---|
 | Dashboard (`FastAPI` + `HTMX`) | not built (Phase C) |
-| Port | 8090 (reserved; 8000 = ai-platform-api, 8001 = algo-trader-api-v2) |
+| Port | 8090 (reserved). Bound on this box: 8000 = `ai-platform-api`, 8002 = `ai-platform-api-linda`. 8001 is a **NUC** port and is absent here. |
 | Notebook walkthrough | not built (Phase D) |
 | `scripts/quick-start.sh` | not built (Phase E) |
 
@@ -50,6 +50,8 @@ local-only, on-demand showcase application.
   `core.hooksPath = scripts/git-hooks`.
 - **The seeded database is deliberately not committed** (Decision 1); `sample_data.json`
   is the committed source of truth and `scripts/quick-start.sh` will seed on demand.
-- **Port 8090 reserved** for the dashboard (8000/8001 are taken by sibling repos).
+- **Port 8090 reserved** for the dashboard. Verified 2026-10-06: the Dev Box
+  currently binds 8000 (`ai-platform-api`) and 8002 (`ai-platform-api-linda`), and
+  does **not** bind 8001 — that port belongs to `algo-trader-api-v2` on the NUC.
 - No tests yet — `probe_config.yaml` carries a temporary `[ ! -d tests ]` guard until
   Phase B adds the suite.

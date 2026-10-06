@@ -39,8 +39,19 @@ All notable changes to this repo are documented here. Newest first.
 - **The seeded SQLite artifact is deliberately not committed.** `sample_data.json` is
   the committed source of truth and `scripts/quick-start.sh` will seed the database on
   demand, so a fresh clone exercises the real pipeline instead of trusting a binary.
-- **Port 8090** reserved for the dashboard; 8000 and 8001 belong to sibling repos.
+- **Port 8090** reserved for the dashboard. Owned by others: 8000 (`ai-platform-api`)
+  and 8002 (`ai-platform-api-linda`) on the Dev Box, plus 8001 which belongs to
+  `algo-trader-api-v2` on the NUC (nothing binds it on the Dev Box).
 - **Vendored HTMX**, never a CDN. Charts belong to the notebook, not the dashboard.
+
+### Fixed
+
+- **docs:** Corrected port ownership. The earlier wording claimed 8000 *and 8001* were
+  bound on the Dev Box; the verified state is that the Dev Box binds **8000**
+  (`ai-platform-api`) and **8002** (`ai-platform-api-linda`), while **8001** is reserved
+  for `algo-trader-api-v2` on the **NUC** and is not bound here. `SESSION_RITUAL.md` now
+  carries a port table plus the check command
+  `ss -ltnp | grep -E ':(8000|8001|8002|8090)'`.
 
 ### Known gaps
 

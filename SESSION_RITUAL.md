@@ -22,7 +22,7 @@ Compare what you just ran against `SYSTEM_SNAPSHOT.md` and flag any difference:
 
 - test count / pass-fail
 - seeded row counts (competitors, products, pricing rows)
-- the dashboard port (must be **8090** — 8000 and 8001 belong to other repos)
+- the dashboard port (must be **8090** — see the port table below)
 - whether `pricing-scraper/data/market_data.db` exists and its size
 
 If the suite fails, stop and fix before starting new work.
@@ -54,8 +54,23 @@ The second command is the fragment check — a fragment must never carry the she
 
 ## Ports
 
-| Port | Owner |
-|---|---|
-| 8000 | `ai-platform-api` |
-| 8001 | `algo-trader-api-v2` |
-| **8090** | **this repo** — do not bind anything else here |
+| Port | Owner | Host | Bound on the Dev Box? |
+|---|---|---|---|
+| 8000 | `ai-platform-api` | Dev Box | ✅ yes |
+| 8001 | `algo-trader-api-v2` | **NUC** (Dev Box reaches it via an SSH tunnel) | ✖ no |
+| 8002 | `ai-platform-api-linda` | Dev Box | ✅ yes |
+| **8090** | **this repo** | Dev Box | reserved — verify it is free before starting |
+
+Canonical registry: `ai-platform/SYSTEM_SNAPSHOT.md` → *Port Allocations*.
+
+Check before binding anything:
+
+```bash
+ss -ltnp | grep -E ':(8000|8001|8002|8090)'
+```
+
+Only 8090 should belong to this repo. 8000 and 8002 are ai-platform (default and
+Linda); 8001 is a NUC port and should be **absent** here.
+
+> Do **not** bind anything else on 8090, and do not "borrow" 8001 just because it
+> is free on this box — that port is reserved for `algo-trader-api-v2`.

@@ -40,7 +40,7 @@ test command in `probe_config.yaml` fails**.
 | Data | SQLite at `pricing-scraper/data/market_data.db`, **seeded, not committed** |
 | Seed source | `pricing-scraper/sample_data.json` (this is the source of truth) |
 | Analysis | `notebooks/pricing_walkthrough.ipynb` — charts live here, not in the dashboard |
-| Ports taken | 8000 (ai-platform-api) and 8001 (algo-trader-api-v2). Use 8090. |
+| Ports taken | 8000 (`ai-platform-api`) and 8002 (`ai-platform-api-linda`) on the Dev Box. 8001 is reserved for `algo-trader-api-v2`, a **NUC** service. Use **8090** (free on both hosts). |
 
 ## Change Policy
 
