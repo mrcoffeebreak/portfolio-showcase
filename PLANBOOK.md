@@ -8,10 +8,10 @@ and `CHANGELOG.md` (dated change entries).
 
 ## Current snapshot
 
-- **Last reconciled:** 2026-10-06 (`main`). **Phases A–D complete, plus Phase E's
-  local work (E1–E5)** and committed. There is still no `origin` remote, so CI is
-  drafted but not yet exercised: **E6 (create the public repo, push `main`, confirm
-  CI green, tag `v1.0.0`) is the only step left.**
+- **Last reconciled:** 2026-10-07 (`main`). **All phases complete — A–E.** The
+  public repository now exists at `github.com/mrcoffeebreak/portfolio-showcase`;
+  `main` carries the full build history, CI is green on the published commit, and
+  the release is tagged **`v1.0.0`** (E6).
 - **Status:** The repo is now a complete, self-contained artifact. Data layer,
   dashboard, notebook, a one-command bootstrap (`scripts/quick-start.sh`) and the
   full doc set (README, `LOCAL_SETUP.md`, `TECH_STACK.md`, the finalized case study)
@@ -22,7 +22,8 @@ and `CHANGELOG.md` (dated change entries).
   against the code (vendor count 3→4, notebook framing off "trend", SQLite row
   count "hundreds"→"dozen", HTMX size 48→50 KB, upsert key → `(competitor, product,
   valid_from)`, and the §6 trend sentence made accurate); PLANBOOK + CHANGELOG
-  entries. Publishing (E6) is deliberately held for an explicit go-ahead.
+  entries. Publishing (E6) followed once the owner gave the explicit go-ahead: the
+  public repo was created, `main` pushed, CI confirmed green and `v1.0.0` tagged.
 - **Phase D complete:** `notebooks/pricing_walkthrough.ipynb` — 15 cells (8 code, 7
   markdown, zero failed). Repo-root discovery by walking up from the kernel's cwd
   (a notebook has no `__file__`) feeding the **same** `import_paths.py` bootstrap;
@@ -69,7 +70,7 @@ and `CHANGELOG.md` (dated change entries).
 | **B** | Data layer: schema, seed JSON, idempotent scraper, tests | A | ✅ complete |
 | **C** | Dashboard + API: FastAPI, `_is_htmx()`, templates, tests | B | ✅ complete |
 | **D** | Jupyter walkthrough + notebook deps + CI notebook gate | B | ✅ complete |
-| **E** | Docs, `quick-start.sh`, publish, tag `v1.0.0` | C + D | 🟡 E1–E5 done; E6 (publish) pending |
+| **E** | Docs, `quick-start.sh`, publish, tag `v1.0.0` | C + D | ✅ complete |
 
 Step-level build notes and per-phase verification are maintained by the repo
 owner outside this repository.

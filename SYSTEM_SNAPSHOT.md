@@ -1,8 +1,9 @@
 # portfolio-showcase — System Snapshot
 
-**Date:** 2026-10-06
+**Date:** 2026-10-07
 **Branch:** main
-**Phase:** E (docs + publish) — see `PLANBOOK.md`
+**Phase:** E — complete (published) — see `PLANBOOK.md`
+**Repo:** `github.com/mrcoffeebreak/portfolio-showcase` (public) — `main` pushed, CI green, `v1.0.0` tagged
 **DB:** `pricing-scraper/data/market_data.db` (48 KB, SQLite — not committed, seeded on demand)
 **Tests:** 36 passing (`tests/test_scraper.py` — schema + idempotent seed + closed windows;
 `tests/test_dashboard.py` — 21 hermetic dashboard tests). The gate also executes
@@ -56,6 +57,16 @@ local-only, on-demand showcase application.
 - `repo_owners.yaml` (not committed) — asserts the expected GitHub owner for this
   repo so the pre-push hook catches an account-crossing push.
 - `secrets_config.yaml` — committed; default forbidden-pattern set.
+
+## Changes This Session (2026-10-07)
+
+### Phase E — publish (E6)
+
+- **repo:** Created the public GitHub repository
+  (`github.com/mrcoffeebreak/portfolio-showcase`) and pushed `main`, which carries
+  the full build history. The repository's GitHub-generated initial commit (a
+  one-line stub README) was superseded. CI — the inlined, hermetic workflow — is
+  green on the published commit, and the release is tagged **`v1.0.0`**.
 
 ## Changes This Session (2026-10-06)
 

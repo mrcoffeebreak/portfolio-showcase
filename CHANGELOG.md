@@ -2,6 +2,17 @@
 
 All notable changes to this repo are documented here. Newest first.
 
+## 2026-10-07
+
+### Added
+
+- **repo:** Published the public repository at
+  `github.com/mrcoffeebreak/portfolio-showcase`. `main` carries the full build
+  history, CI (the inlined, hermetic workflow in `.github/workflows/ci.yml`) is
+  green on the published commit, and the release is tagged **`v1.0.0`**. The
+  repository's GitHub-generated initial commit — a one-line stub README — was
+  superseded by this history.
+
 ## 2026-10-06
 
 ### Added
@@ -221,6 +232,4 @@ local, unpublished `.git/info/exclude` rather than the published `.gitignore`.
 
 ### Known gaps
 
-- No `origin` remote yet — publishing (create the public repository, push `main`,
-  confirm CI is green, tag `v1.0.0`) is the last remaining step and is held for an
-  explicit go-ahead.
+- None — the repo is published (`v1.0.0`), CI is green, and every phase is complete.
