@@ -66,6 +66,14 @@ the snapshot date and **blocks the commit if the test command in
   came from elsewhere, describe the *idea*, not where it came from — a reader
   cannot follow the reference anyway.
 
+## Hard Constraints (Anti-Overengineering)
+
+- **Zero Added Daemons**: Never create or propose new systemd services, timers, cron jobs, or background processes unless the prompt explicitly orders it by name. Run tasks in-process or via simple CLI commands.
+- **Strict Repo Boundary**: Never inspect, edit, or defer tasks to sibling repos within the same session. If an issue touches another repo, log a one-line note and STOP.
+- **Dependency Freeze**: Never add new packages (pip, npm, apt) or external tools if standard library or existing dependencies can solve the problem.
+- **Rule of Least Mechanism**: Prefer a single function in an existing file over new classes, generic interfaces, config files, or helper modules. No speculative extensibility.
+- **Two-File Radius**: If a proposed implementation touches or creates more than 2 files, HALT and present the plan to the user for explicit approval before writing any code.
+
 ## Conventions
 
 This is a standalone public artifact. The patterns it follows — `_is_htmx()`
