@@ -74,6 +74,8 @@ the snapshot date and **blocks the commit if the test command in
 - **Rule of Least Mechanism**: Prefer a single function in an existing file over new classes, generic interfaces, config files, or helper modules. No speculative extensibility.
 - **Two-File Radius**: If a proposed implementation touches or creates more than 2 files, HALT and present the plan to the user for explicit approval before writing any code.
 
+**Owner Override** — Only the user may lift a constraint, and only by writing `@override <name> — <reason>` in a message. Names: `daemons`, `repo-boundary`, `deps`, `mechanism`, `files`. Scope is that one task; append `session` (e.g. `@override deps session — …`) to extend it to the whole session. The agent must never self-grant an override. Record every override + reason in the session notes; it does not carry into the next session.
+
 ## Conventions
 
 This is a standalone public artifact. The patterns it follows — `_is_htmx()`
